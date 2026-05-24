@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smokesman Grill – Ago-Iwoye</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Barlow+Condensed:wght@300;400;600;700&family=Barlow:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ember: #E84A1A;
+    --gold: #C8922A;
+    --charcoal: #1A1612;
+    --ash: #2E2823;
+    --smoke: #3D3730;
+    --cream: #F5EDD8;
+    --pale: #EBE0C8;
+  }
+
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--charcoal);
+    color: var(--cream);
+    font-family: 'Barlow', sans-serif;
+    font-weight: 300;
+    overflow-x: hidden;
+  }
+
+  /* ── NOISE OVERLAY ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    background-size: 200px;
+    pointer-events: none;
+    opacity: 0.35;
+  }
+
+  section, nav, footer { position: relative; z-index: 1; }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 1.2rem 4vw;
+    background: linear-gradient(to bottom, rgba(26,22,18,0.95), transparent);
+    backdrop-filter: blur(4px);
+  }
+
+  .nav-logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    font-style: italic;
+    color: var(--gold);
+    letter-spacing: 0.05em;
+    text-decoration: none;
+  }
+
+  .nav-links { display: flex; gap: 2.5rem; list-style: none; }
+  .nav-links a {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--pale);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--ember); }
+
+  .nav-cta {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--charcoal);
+    background: var(--ember);
+    border: none;
+    padding: 0.55rem 1.4rem;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.2s;
+  }
+  .nav-cta:hover { background: var(--gold); }
+
+  /* ── HERO ── */
+  #hero {
+    min-height: 100vh;
+    display: flex; align-items: flex-end;
+    padding: 0 4vw 8vh;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero-bg {
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse 60% 60% at 70% 40%, rgba(232,74,26,0.18) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 50% at 30% 70%, rgba(200,146,42,0.12) 0%, transparent 55%),
+      linear-gradient(160deg, #0D0B09 0%, #1A1612 40%, #231E18 100%);
+  }
+
+  /* Animated smoke rings */
+  .smoke-ring {
+    position: absolute;
+    border-radius: 50%;
+    border: 1px solid rgba(200,146,42,0.08);
+    animation: expand 8s ease-out infinite;
+    pointer-events: none;
+  }
+  .smoke-ring:nth-child(1) { width: 200px; height: 200px; top: 20%; left: 65%; animation-delay: 0s; }
+  .smoke-ring:nth-child(2) { width: 350px; height: 350px; top: 15%; left: 60%; animation-delay: 2s; }
+  .smoke-ring:nth-child(3) { width: 500px; height: 500px; top: 10%; left: 55%; animation-delay: 4s; }
+
+  @keyframes expand {
+    0% { transform: scale(0.3); opacity: 0.6; }
+    100% { transform: scale(1.8); opacity: 0; }
+  }
+
+  .hero-eyebrow {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--ember);
+    margin-bottom: 1.2rem;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.2s forwards;
+  }
+
+  .hero-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(4rem, 11vw, 10rem);
+    line-height: 0.9;
+    font-weight: 900;
+    color: var(--cream);
+    text-transform: uppercase;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.4s forwards;
+  }
+
+  .hero-title em {
+    font-style: italic;
+    color: var(--ember);
+    display: block;
+  }
+
+  .hero-sub {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: clamp(1rem, 2.5vw, 1.5rem);
+    font-weight: 300;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-top: 1.5rem;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.6s forwards;
+  }
+
+  .hero-badges {
+    display: flex; gap: 2rem; margin-top: 2.5rem;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.8s forwards;
+  }
+
+  .badge {
+    display: flex; flex-direction: column; gap: 0.2rem;
+  }
+  .badge-val {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--gold);
+    line-height: 1;
+  }
+  .badge-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(245,237,216,0.5);
+  }
+
+  .badge-divider {
+    width: 1px; background: rgba(200,146,42,0.2); align-self: stretch;
+  }
+
+  .hero-actions {
+    display: flex; gap: 1rem; margin-top: 3rem;
+    opacity: 0;
+    animation: fadeUp 0.8s 1s forwards;
+  }
+
+  .btn-primary {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--charcoal);
+    background: var(--ember);
+    border: none;
+    padding: 1rem 2.5rem;
+    cursor: pointer;
+    text-decoration: none;
+    transition: transform 0.2s, background 0.2s;
+    display: inline-block;
+  }
+  .btn-primary:hover { background: var(--gold); transform: translateY(-2px); }
+
+  .btn-outline {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--cream);
+    background: transparent;
+    border: 1px solid rgba(245,237,216,0.3);
+    padding: 1rem 2.5rem;
+    cursor: pointer;
+    text-decoration: none;
+    transition: border-color 0.2s, color 0.2s;
+    display: inline-block;
+  }
+  .btn-outline:hover { border-color: var(--gold); color: var(--gold); }
+
+  .hero-content { max-width: 680px; }
+
+  /* Open badge */
+  .open-pill {
+    position: absolute; top: 2rem; right: 4vw;
+    display: flex; align-items: center; gap: 0.5rem;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: #5CDE8A;
+    background: rgba(92,222,138,0.1);
+    border: 1px solid rgba(92,222,138,0.25);
+    padding: 0.5rem 1rem;
+    opacity: 0;
+    animation: fadeIn 0.6s 1.2s forwards;
+  }
+  .open-dot {
+    width: 7px; height: 7px;
+    background: #5CDE8A;
+    border-radius: 50%;
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.7); }
+  }
+
+  /* ── TICKER ── */
+  .ticker {
+    background: var(--ember);
+    padding: 0.7rem 0;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+  .ticker-inner {
+    display: inline-flex; gap: 4rem;
+    animation: ticker 18s linear infinite;
+  }
+  .ticker-item {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--charcoal);
+  }
+  .ticker-dot { color: var(--charcoal); opacity: 0.4; }
+  @keyframes ticker {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+
+  /* ── SECTIONS SHARED ── */
+  .section-eyebrow {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--ember);
+    margin-bottom: 0.8rem;
+  }
+  .section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2rem, 5vw, 4rem);
+    font-weight: 900;
+    line-height: 1;
+    color: var(--cream);
+    text-transform: uppercase;
+  }
+  .section-title em { font-style: italic; color: var(--ember); }
+  .section-body {
+    font-size: 0.95rem;
+    line-height: 1.8;
+    color: rgba(245,237,216,0.6);
+    max-width: 460px;
+  }
+
+  /* ── ABOUT ── */
+  #about {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    min-height: 80vh;
+  }
+
+  .about-visual {
+    background:
+      linear-gradient(to bottom, rgba(26,22,18,0.3), rgba(26,22,18,0.7)),
+      linear-gradient(135deg, #2E1A10, #1A0F08);
+    position: relative;
+    overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .about-visual-inner {
+    text-align: center;
+  }
+  .flame-icon {
+    font-size: 8rem;
+    line-height: 1;
+    filter: drop-shadow(0 0 40px rgba(232,74,26,0.5));
+    animation: flicker 2.5s ease-in-out infinite;
+  }
+  @keyframes flicker {
+    0%, 100% { transform: scaleY(1) scaleX(1); filter: drop-shadow(0 0 40px rgba(232,74,26,0.5)); }
+    25% { transform: scaleY(1.05) scaleX(0.97); filter: drop-shadow(0 0 60px rgba(232,74,26,0.7)); }
+    50% { transform: scaleY(0.97) scaleX(1.02); filter: drop-shadow(0 0 35px rgba(232,74,26,0.4)); }
+    75% { transform: scaleY(1.03) scaleX(0.99); filter: drop-shadow(0 0 55px rgba(232,74,26,0.65)); }
+  }
+
+  .about-grid-lines {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(200,146,42,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(200,146,42,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  .about-content {
+    background: var(--ash);
+    padding: 8vh 6vw;
+    display: flex; flex-direction: column; justify-content: center; gap: 1.8rem;
+  }
+
+  .about-stats {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;
+    margin-top: 1rem;
+  }
+  .stat {
+    padding: 1.2rem;
+    border: 1px solid rgba(200,146,42,0.15);
+    background: rgba(200,146,42,0.04);
+  }
+  .stat-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: var(--gold);
+    line-height: 1;
+  }
+  .stat-desc {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: rgba(245,237,216,0.4);
+    margin-top: 0.3rem;
+  }
+
+  /* ── MENU ── */
+  #menu {
+    padding: 10vh 4vw;
+    background: var(--charcoal);
+  }
+
+  .menu-header {
+    display: flex; justify-content: space-between; align-items: flex-end;
+    margin-bottom: 4rem;
+    flex-wrap: wrap; gap: 1.5rem;
+  }
+
+  .menu-tabs {
+    display: flex; gap: 0; border: 1px solid rgba(200,146,42,0.2);
+    flex-wrap: wrap;
+  }
+  .menu-tab {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: rgba(245,237,216,0.4);
+    background: none;
+    border: none;
+    padding: 0.7rem 1.4rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-right: 1px solid rgba(200,146,42,0.2);
+  }
+  .menu-tab:last-child { border-right: none; }
+  .menu-tab.active, .menu-tab:hover {
+    background: var(--ember);
+    color: var(--charcoal);
+  }
+
+  .menu-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1px;
+    background: rgba(200,146,42,0.1);
+  }
+
+  .menu-item {
+    background: var(--ash);
+    padding: 2rem;
+    transition: background 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .menu-item::before {
+    content: '';
+    position: absolute; bottom: 0; left: 0;
+    width: 0; height: 2px;
+    background: var(--ember);
+    transition: width 0.3s;
+  }
+  .menu-item:hover { background: var(--smoke); }
+  .menu-item:hover::before { width: 100%; }
+
+  .item-tag {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ember);
+    margin-bottom: 0.8rem;
+  }
+  .item-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--cream);
+    margin-bottom: 0.5rem;
+    line-height: 1.2;
+  }
+  .item-desc {
+    font-size: 0.82rem;
+    line-height: 1.6;
+    color: rgba(245,237,216,0.45);
+    margin-bottom: 1.2rem;
+  }
+  .item-price {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--gold);
+    letter-spacing: 0.05em;
+  }
+
+  /* ── EXPERIENCE ── */
+  #experience {
+    background: var(--ash);
+    padding: 10vh 4vw;
+  }
+
+  .exp-grid {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 6vw;
+    margin-top: 4rem;
+    align-items: start;
+  }
+
+  .exp-features {
+    display: flex; flex-direction: column; gap: 0;
+  }
+  .exp-feature {
+    padding: 1.5rem 0;
+    border-bottom: 1px solid rgba(200,146,42,0.1);
+    display: flex; gap: 1.2rem;
+    align-items: flex-start;
+  }
+  .exp-icon {
+    font-size: 1.5rem; line-height: 1;
+    flex-shrink: 0;
+    filter: drop-shadow(0 0 8px rgba(232,74,26,0.4));
+  }
+  .exp-feat-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--cream);
+    margin-bottom: 0.3rem;
+  }
+  .exp-feat-desc {
+    font-size: 0.82rem;
+    line-height: 1.6;
+    color: rgba(245,237,216,0.45);
+  }
+
+  .exp-big {
+    background:
+      radial-gradient(ellipse 80% 60% at 50% 50%, rgba(232,74,26,0.12), transparent 70%),
+      var(--charcoal);
+    padding: 4rem;
+    position: relative;
+    overflow: hidden;
+    display: flex; flex-direction: column; justify-content: space-between;
+    min-height: 440px;
+  }
+  .exp-big-quote {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.4rem, 3vw, 2.2rem);
+    font-style: italic;
+    line-height: 1.4;
+    color: var(--cream);
+    position: relative;
+    z-index: 1;
+  }
+  .exp-big-quote::before {
+    content: '"';
+    font-size: 8rem;
+    color: rgba(232,74,26,0.12);
+    position: absolute;
+    top: -2rem; left: -1rem;
+    font-family: 'Playfair Display', serif;
+    line-height: 1;
+  }
+  .exp-big-attr {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.75rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+
+  /* ── REVIEWS ── */
+  #reviews {
+    padding: 10vh 4vw;
+    background: var(--charcoal);
+  }
+
+  .reviews-header { margin-bottom: 3rem; }
+
+  .stars-display {
+    display: flex; align-items: center; gap: 0.8rem;
+    margin-top: 0.8rem;
+  }
+  .stars { color: var(--gold); font-size: 1.2rem; letter-spacing: 0.1em; }
+  .rating-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--gold);
+  }
+  .rating-count {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.75rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: rgba(245,237,216,0.35);
+  }
+
+  .reviews-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1px;
+    background: rgba(200,146,42,0.08);
+  }
+  .review-card {
+    background: var(--ash);
+    padding: 2rem;
+  }
+  .review-stars { color: var(--gold); font-size: 0.9rem; margin-bottom: 0.8rem; }
+  .review-text {
+    font-size: 0.88rem;
+    line-height: 1.7;
+    color: rgba(245,237,216,0.65);
+    margin-bottom: 1.2rem;
+    font-style: italic;
+  }
+  .reviewer {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.75rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+
+  /* ── VISIT ── */
+  #visit {
+    background: var(--ash);
+    padding: 10vh 4vw;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6vw;
+    align-items: start;
+  }
+
+  .info-block {
+    display: flex; flex-direction: column; gap: 2rem;
+  }
+
+  .info-item {
+    padding-bottom: 2rem;
+    border-bottom: 1px solid rgba(200,146,42,0.1);
+  }
+  .info-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--ember);
+    margin-bottom: 0.5rem;
+  }
+  .info-val {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 1rem;
+    font-weight: 400;
+    color: var(--cream);
+    letter-spacing: 0.05em;
+    line-height: 1.5;
+  }
+  .info-val a {
+    color: var(--cream);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  .info-val a:hover { color: var(--gold); }
+
+  .open-badge {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    background: rgba(92,222,138,0.1);
+    border: 1px solid rgba(92,222,138,0.25);
+    padding: 0.35rem 0.9rem;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #5CDE8A;
+    margin-top: 0.4rem;
+    display: inline-flex;
+  }
+
+  .map-placeholder {
+    background:
+      linear-gradient(rgba(26,22,18,0.4), rgba(26,22,18,0.4)),
+      repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(200,146,42,0.06) 39px, rgba(200,146,42,0.06) 40px),
+      repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(200,146,42,0.06) 39px, rgba(200,146,42,0.06) 40px),
+      linear-gradient(135deg, #1a1208, #231a0e);
+    min-height: 350px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 1rem;
+    border: 1px solid rgba(200,146,42,0.15);
+    position: relative;
+    overflow: hidden;
+  }
+  .map-pin {
+    font-size: 3rem;
+    filter: drop-shadow(0 4px 20px rgba(232,74,26,0.5));
+    animation: pinBounce 2s ease-in-out infinite;
+  }
+  @keyframes pinBounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+  .map-address {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(245,237,216,0.5);
+    text-align: center;
+    padding: 0 2rem;
+    line-height: 1.6;
+  }
+  .map-btn {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--charcoal);
+    background: var(--ember);
+    border: none;
+    padding: 0.7rem 1.8rem;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.2s;
+    display: inline-block;
+    margin-top: 0.5rem;
+  }
+  .map-btn:hover { background: var(--gold); }
+
+  /* ── FOOTER ── */
+  footer {
+    background: #0D0B09;
+    padding: 4vh 4vw;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid rgba(200,146,42,0.1);
+    flex-wrap: wrap; gap: 1.5rem;
+  }
+  .footer-logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem;
+    font-style: italic;
+    color: var(--gold);
+  }
+  .footer-logo span {
+    display: block;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.65rem;
+    font-style: normal;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: rgba(245,237,216,0.3);
+    margin-top: 0.2rem;
+  }
+  .footer-copy {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    color: rgba(245,237,216,0.2);
+  }
+  .footer-links {
+    display: flex; gap: 1.5rem; list-style: none;
+  }
+  .footer-links a {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: rgba(245,237,216,0.3);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  .footer-links a:hover { color: var(--gold); }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 768px) {
+    nav { padding: 1rem 4vw; }
+    .nav-links, .nav-cta { display: none; }
+    #about { grid-template-columns: 1fr; }
+    .about-visual { min-height: 250px; }
+    .exp-grid { grid-template-columns: 1fr; }
+    #visit { grid-template-columns: 1fr; }
+    .hero-badges { flex-wrap: wrap; gap: 1.5rem; }
+    footer { flex-direction: column; text-align: center; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="#hero" class="nav-logo">Smokesman Grill</a>
+  <ul class="nav-links">
+    <li><a href="#about">Our Story</a></li>
+    <li><a href="#menu">Menu</a></li>
+    <li><a href="#reviews">Reviews</a></li>
+    <li><a href="#visit">Find Us</a></li>
+  </ul>
+  <a href="tel:08155615166" class="nav-cta">Call Now</a>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-bg">
+    <div class="smoke-ring"></div>
+    <div class="smoke-ring"></div>
+    <div class="smoke-ring"></div>
+  </div>
+
+  <div class="open-pill">
+    <span class="open-dot"></span>
+    Open 24 Hours
+  </div>
+
+  <div class="hero-content">
+    <p class="hero-eyebrow">Ago-Iwoye · Ogun State</p>
+    <h1 class="hero-title">
+      Smokes<em>man</em>
+      Grill
+    </h1>
+    <p class="hero-sub">Where Fire Meets Flavour</p>
+
+    <div class="hero-badges">
+      <div class="badge">
+        <span class="badge-val">3.8★</span>
+        <span class="badge-label">Google Rating</span>
+      </div>
+      <div class="badge-divider"></div>
+      <div class="badge">
+        <span class="badge-val">25+</span>
+        <span class="badge-label">Reviews</span>
+      </div>
+      <div class="badge-divider"></div>
+      <div class="badge">
+        <span class="badge-val">24h</span>
+        <span class="badge-label">Always Open</span>
+      </div>
+    </div>
+
+    <div class="hero-actions">
+      <a href="tel:08155615166" class="btn-primary">Order Now</a>
+      <a href="#menu" class="btn-outline">View Menu</a>
+    </div>
+  </div>
+</section>
+
+<!-- TICKER -->
+<div class="ticker">
+  <div class="ticker-inner">
+    <span class="ticker-item">Open 24 Hours</span>
+    <span class="ticker-dot">✦</span>
+    <span class="ticker-item">Smoked Meats &amp; Grills</span>
+    <span class="ticker-dot">✦</span>
+    <span class="ticker-item">Ago-Iwoye, Ogun State</span>
+    <span class="ticker-dot">✦</span>
+    <span class="ticker-item">₦6,000 – ₦8,000 Per Person</span>
+    <span class="ticker-dot">✦</span>
+    <span class="ticker-item">Call 0815 561 5166</span>
+    <span class="ticker-dot">✦</span>
+    <span class="ticker-item">Open 24 Hours</span>
+    <span class="ticker-dot">✦</span>
+    <span class="ticker-item">Smoked Meats &amp; Grills</span>
+    <span class="ticker-dot">✦</span>
+    <span class="ticker-item">Ago-Iwoye, Ogun State</span>
+    <span class="ticker-dot">✦</span>
+    <span class="ticker-item">₦6,000 – ₦8,000 Per Person</span>
+    <span class="ticker-dot">✦</span>
+    <span class="ticker-item">Call 0815 561 5166</span>
+    <span class="ticker-dot">✦</span>
+  </div>
+</div>
+
+<!-- ABOUT -->
+<section id="about">
+  <div class="about-visual">
+    <div class="about-grid-lines"></div>
+    <div class="about-visual-inner">
+      <div class="flame-icon">🔥</div>
+    </div>
+  </div>
+
+  <div class="about-content">
+    <div>
+      <p class="section-eyebrow">Our Story</p>
+      <h2 class="section-title">Crafted by<br><em>Fire</em></h2>
+    </div>
+    <p class="section-body">
+      At Smokesman Grill, every cut is treated with respect — seasoned with care, kissed by open flame, and slow-smoked to perfection. We bring bold West African BBQ culture to every plate, every hour of every day.
+    </p>
+    <p class="section-body">
+      Located at the heart of Itamerin Bus-Stop in Ago-Iwoye, we've become the go-to destination for grill lovers who refuse to compromise on flavour.
+    </p>
+
+    <div class="about-stats">
+      <div class="stat">
+        <div class="stat-num">24h</div>
+        <div class="stat-desc">Always Open</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">3.8★</div>
+        <div class="stat-desc">Customer Rating</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">₦6K+</div>
+        <div class="stat-desc">Per Person</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">100%</div>
+        <div class="stat-desc">Real Smoke</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MENU -->
+<section id="menu">
+  <div class="menu-header">
+    <div>
+      <p class="section-eyebrow">What We Serve</p>
+      <h2 class="section-title">The <em>Menu</em></h2>
+    </div>
+    <div class="menu-tabs">
+      <button class="menu-tab active" onclick="filterMenu('all', this)">All</button>
+      <button class="menu-tab" onclick="filterMenu('grill', this)">Grill</button>
+      <button class="menu-tab" onclick="filterMenu('sides', this)">Sides</button>
+      <button class="menu-tab" onclick="filterMenu('drinks', this)">Drinks</button>
+    </div>
+  </div>
+
+  <div class="menu-grid" id="menuGrid">
+    <div class="menu-item" data-cat="grill">
+      <div class="item-tag">Signature · Grill</div>
+      <div class="item-name">Smokesman Special Suya</div>
+      <div class="item-desc">Tender beef skewers marinated in our house suya spice blend, slow-grilled over open flame.</div>
+      <div class="item-price">₦3,500</div>
+    </div>
+    <div class="menu-item" data-cat="grill">
+      <div class="item-tag">Fan Favourite · Grill</div>
+      <div class="item-name">Whole Smoked Chicken</div>
+      <div class="item-desc">Half or whole bird, brined and smoked low and slow for deep, juicy flavour throughout.</div>
+      <div class="item-price">₦6,500</div>
+    </div>
+    <div class="menu-item" data-cat="grill">
+      <div class="item-tag">Premium · Grill</div>
+      <div class="item-name">Grilled Catfish</div>
+      <div class="item-desc">Fresh catfish, spiced, wrapped in foil, and grilled on charcoal. Served with pepper sauce.</div>
+      <div class="item-price">₦5,500</div>
+    </div>
+    <div class="menu-item" data-cat="grill">
+      <div class="item-tag">Grill</div>
+      <div class="item-name">Smoked Goat Ribs</div>
+      <div class="item-desc">Bone-in goat ribs rubbed with herbs and smoke-roasted until they fall away from the bone.</div>
+      <div class="item-price">₦7,000</div>
+    </div>
+    <div class="menu-item" data-cat="sides">
+      <div class="item-tag">Sides</div>
+      <div class="item-name">Peppered Fried Plantain</div>
+      <div class="item-desc">Ripe plantain fried golden, tossed in a spiced pepper sauce. The perfect smoky companion.</div>
+      <div class="item-price">₦800</div>
+    </div>
+    <div class="menu-item" data-cat="sides">
+      <div class="item-tag">Sides</div>
+      <div class="item-name">Peppersoup</div>
+      <div class="item-desc">Rich, aromatic broth with your choice of protein — the perfect starter or late-night warmth.</div>
+      <div class="item-price">₦2,000</div>
+    </div>
+    <div class="menu-item" data-cat="sides">
+      <div class="item-tag">Sides</div>
+      <div class="item-name">White Rice &amp; Stew</div>
+      <div class="item-desc">Fluffy long-grain rice paired with a slow-cooked tomato and pepper stew. A solid base.</div>
+      <div class="item-price">₦1,500</div>
+    </div>
+    <div class="menu-item" data-cat="drinks">
+      <div class="item-tag">Drinks</div>
+      <div class="item-name">Zobo Delight</div>
+      <div class="item-desc">House-made hibiscus drink with ginger and cloves. Chilled, refreshing, and unforgettable.</div>
+      <div class="item-price">₦500</div>
+    </div>
+    <div class="menu-item" data-cat="drinks">
+      <div class="item-tag">Drinks</div>
+      <div class="item-name">Cold Drinks</div>
+      <div class="item-desc">Full selection of chilled soft drinks, water, and malt beverages always available.</div>
+      <div class="item-price">From ₦300</div>
+    </div>
+  </div>
+</section>
+
+<!-- EXPERIENCE -->
+<section id="experience">
+  <p class="section-eyebrow">The Smokesman Experience</p>
+  <h2 class="section-title">More Than<br>A <em>Meal</em></h2>
+
+  <div class="exp-grid">
+    <div class="exp-features">
+      <div class="exp-feature">
+        <span class="exp-icon">🕐</span>
+        <div>
+          <div class="exp-feat-title">Open 24 Hours</div>
+          <div class="exp-feat-desc">Day or night, hunger doesn't keep hours and neither do we.</div>
+        </div>
+      </div>
+      <div class="exp-feature">
+        <span class="exp-icon">🔥</span>
+        <div>
+          <div class="exp-feat-title">Live Fire Cooking</div>
+          <div class="exp-feat-desc">Every order is freshly grilled on our open charcoal pit — no shortcuts.</div>
+        </div>
+      </div>
+      <div class="exp-feature">
+        <span class="exp-icon">🥩</span>
+        <div>
+          <div class="exp-feat-title">Quality Cuts Only</div>
+          <div class="exp-feat-desc">We source fresh, quality meats daily for every plate we serve.</div>
+        </div>
+      </div>
+      <div class="exp-feature">
+        <span class="exp-icon">📍</span>
+        <div>
+          <div class="exp-feat-title">Easy to Find</div>
+          <div class="exp-feat-desc">Right at Itamerin Bus-Stop, just 1.7km from the town centre.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="exp-big">
+      <div class="exp-big-quote">
+        "The smoke doesn't lie. We put the same fire into every plate, every hour, every single day."
+      </div>
+      <div class="exp-big-attr">— The Smokesman Team</div>
+    </div>
+  </div>
+</section>
+
+<!-- REVIEWS -->
+<section id="reviews">
+  <div class="reviews-header">
+    <p class="section-eyebrow">What People Say</p>
+    <h2 class="section-title">Customer <em>Reviews</em></h2>
+    <div class="stars-display">
+      <span class="stars">★★★★☆</span>
+      <span class="rating-num">3.8</span>
+      <span class="rating-count">25 Google Reviews</span>
+    </div>
+  </div>
+
+  <div class="reviews-grid">
+    <div class="review-card">
+      <div class="review-stars">★★★★★</div>
+      <p class="review-text">"Best suya in Ago-Iwoye, no argument. The smoke flavour is deep and the portions are generous. I always end up ordering more than I planned."</p>
+      <div class="reviewer">Local Customer</div>
+    </div>
+    <div class="review-card">
+      <div class="review-stars">★★★★☆</div>
+      <p class="review-text">"The catfish is incredible — perfectly spiced and grilled. The pepper sauce they serve it with is the real star. Will definitely be back."</p>
+      <div class="reviewer">Food Lover</div>
+    </div>
+    <div class="review-card">
+      <div class="review-stars">★★★★★</div>
+      <p class="review-text">"24 hours? That alone makes them special. The late-night peppersoup hits different. A genuine gem right here in Ogun State."</p>
+      <div class="reviewer">Night Owl Regular</div>
+    </div>
+  </div>
+</section>
+
+<!-- VISIT -->
+<section id="visit">
+  <div>
+    <p class="section-eyebrow">Come Visit Us</p>
+    <h2 class="section-title">Find <em>Us</em></h2>
+
+    <div class="info-block" style="margin-top: 2.5rem;">
+      <div class="info-item">
+        <div class="info-label">Address</div>
+        <div class="info-val">WWWM+674 Itamerin Bus-Stop<br>Ago-Iwoye 120107<br>Ogun State, Nigeria</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Phone</div>
+        <div class="info-val"><a href="tel:08155615166">0815 561 5166</a></div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Hours</div>
+        <div class="info-val">
+          Open Every Day
+          <div class="open-badge">
+            <span class="open-dot"></span>
+            Open 24 Hours
+          </div>
+        </div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Price Range</div>
+        <div class="info-val">₦6,000 – ₦8,000 per person</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="map-placeholder">
+    <div class="map-pin">📍</div>
+    <div class="map-address">
+      WWWM+674 Itamerin Bus-Stop<br>
+      Ago-Iwoye, Ogun State<br>
+      1.7 km from town centre
+    </div>
+    <a href="https://maps.google.com/?q=Smokesman+Grill+Ago-Iwoye+Ogun+State" target="_blank" class="map-btn">
+      Open in Google Maps
+    </a>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">
+    Smokesman Grill
+    <span>Ago-Iwoye · Ogun State</span>
+  </div>
+  <ul class="footer-links">
+    <li><a href="#menu">Menu</a></li>
+    <li><a href="#reviews">Reviews</a></li>
+    <li><a href="tel:08155615166">0815 561 5166</a></li>
+  </ul>
+  <div class="footer-copy">© 2026 Smokesman Grill. All rights reserved.</div>
+</footer>
+
+<script>
+  function filterMenu(cat, btn) {
+    document.querySelectorAll('.menu-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.menu-item').forEach(item => {
+      if (cat === 'all' || item.dataset.cat === cat) {
+        item.style.display = '';
+      } else {
+        item.style.display = 'none';
+      }
+    });
+  }
+
+  // Scroll-triggered fade-in
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.style.opacity = '1';
+        e.target.style.transform = 'translateY(0)';
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.menu-item, .review-card, .stat, .exp-feature').forEach(el => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(20px)';
+    el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+    observer.observe(el);
+  });
+</script>
+</body>
+</html>
