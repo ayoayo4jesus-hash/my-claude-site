@@ -1,0 +1,1351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smokesman Grill — Ago-Iwoye</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,600;0,700;1,300;1,600;1,700&family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<!-- FIREBASE CDN -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<style>
+:root{
+  --black:#050302;--deep:#0C0907;--char:#161009;--coal:#201710;
+  --wood:#2A1E12;--ember:#C53818;--fire:#E04E20;--gold:#B07618;
+  --brass:#CE9422;--bone:#EDE0C6;--ash:#7A6E60;--smoke:#3E3630;
+  --ease:cubic-bezier(.16,1,.3,1);
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:auto;}
+body{background:var(--black);color:var(--bone);font-family:"DM Sans",sans-serif;font-weight:300;overflow-x:hidden;cursor:none;}
+*{cursor:none!important;}
+a{text-decoration:none;color:inherit;}
+button{font-family:inherit;border:none;}
+input{font-family:inherit;}
+body.locked{overflow:hidden;}
+
+/* GRAIN */
+#grain{position:fixed;inset:0;z-index:9000;pointer-events:none;opacity:.04;
+background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+background-size:200px;animation:grain .35s steps(1) infinite;}
+@keyframes grain{0%{transform:translate(0,0)}10%{transform:translate(-2%,-3%)}20%{transform:translate(3%,1%)}30%{transform:translate(-1%,3%)}40%{transform:translate(2%,-2%)}50%{transform:translate(-3%,1%)}60%{transform:translate(1%,2%)}70%{transform:translate(-2%,-1%)}80%{transform:translate(3%,-2%)}90%{transform:translate(-1%,3%)}100%{transform:translate(0,0)}}
+
+/* SCROLL PROGRESS */
+#prog{position:fixed;top:0;left:0;height:2px;background:var(--ember);z-index:10000;width:0%;box-shadow:0 0 12px rgba(197,56,24,.7);}
+
+/* CURSOR */
+#cDot{position:fixed;width:5px;height:5px;background:var(--ember);border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);transition:width .12s,height .12s,background .18s;}
+#cRing{position:fixed;width:34px;height:34px;border:1px solid rgba(197,56,24,.38);border-radius:50%;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:width .32s,height .32s,border-color .28s;}
+body.ch #cDot{width:9px;height:9px;background:var(--brass);}
+body.ch #cRing{width:56px;height:56px;border-color:rgba(206,148,34,.48);}
+
+/* FLOATING FOOD */
+#foodBg{position:fixed;inset:0;pointer-events:none;z-index:1;overflow:hidden;}
+.ff{position:absolute;bottom:-8%;opacity:0;animation:ffUp linear infinite;user-select:none;will-change:transform;}
+@keyframes ffUp{0%{transform:translateY(0) rotate(0deg);opacity:0}7%{opacity:.07}50%{transform:translateY(-58vh) rotate(170deg)}93%{opacity:.07}100%{transform:translateY(-116vh) rotate(340deg);opacity:0}}
+
+/* FIREBASE SETUP BANNER */
+#setupBanner{display:none;position:fixed;top:0;left:0;right:0;z-index:6000;background:linear-gradient(90deg,var(--ember),#8B2010);padding:.9rem 4.5vw;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;}
+#setupBanner.show{display:flex;}
+.sb-msg{font-family:"Bebas Neue",sans-serif;font-size:.72rem;letter-spacing:.18em;color:#fff;}
+.sb-msg span{opacity:.7;margin:0 .6rem;}
+.sb-btn{font-family:"Bebas Neue",sans-serif;font-size:.68rem;letter-spacing:.18em;color:var(--ember);background:#fff;border:none;padding:.45rem 1.2rem;flex-shrink:0;transition:background .2s;}
+.sb-btn:hover{background:var(--bone);}
+
+/* PRELOADER */
+#pre{position:fixed;inset:0;background:var(--black);z-index:8999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2.4rem;transition:opacity 1.1s var(--ease),visibility 1.1s;}
+#pre.out{opacity:0;visibility:hidden;}
+.pre-w{overflow:hidden;}
+.pre-brand{font-family:"Cormorant Garamond",serif;font-weight:700;font-style:italic;font-size:clamp(2.5rem,7vw,5.5rem);color:var(--bone);display:block;transform:translateY(105%);transition:transform 1s var(--ease) .15s;}
+#pre.go .pre-brand{transform:translateY(0);}
+.pre-divider{display:flex;align-items:center;gap:1.2rem;opacity:0;transition:opacity .5s ease .75s;}
+#pre.go .pre-divider{opacity:1;}
+.pre-line{flex:1;max-width:60px;height:1px;background:rgba(237,224,198,.12);}
+.pre-sub{font-family:"Bebas Neue",sans-serif;font-size:.6rem;letter-spacing:.38em;color:var(--ash);}
+.pre-bar{width:180px;height:1px;background:rgba(237,224,198,.06);position:relative;overflow:hidden;}
+.pre-fill{position:absolute;left:0;top:0;height:100%;width:0%;background:var(--ember);animation:pf 2.1s var(--ease) .3s forwards;}
+@keyframes pf{to{width:100%}}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:500;display:flex;justify-content:space-between;align-items:center;padding:1.4rem 4.5vw;transition:background .45s,padding .35s;}
+nav.sc{background:rgba(5,3,2,.95);backdrop-filter:blur(20px);padding:1rem 4.5vw;border-bottom:1px solid rgba(237,224,198,.04);}
+nav.bumped{top:44px;}
+.nav-logo{font-family:"Cormorant Garamond",serif;font-style:italic;font-weight:600;font-size:1.05rem;letter-spacing:.06em;color:var(--brass);}
+.nav-links{display:flex;gap:2.2rem;list-style:none;align-items:center;}
+.nav-links a,.nav-links button{font-family:"Bebas Neue",sans-serif;font-size:.68rem;letter-spacing:.22em;color:rgba(237,224,198,.35);background:none;border:none;transition:color .2s;padding:0;}
+.nav-links a:hover,.nav-links button:hover{color:var(--bone);}
+.nav-right{display:flex;gap:.7rem;align-items:center;}
+.n-btn{font-family:"Bebas Neue",sans-serif;font-size:.68rem;letter-spacing:.18em;padding:.52rem 1.3rem;transition:all .22s;}
+.n-ghost{color:rgba(237,224,198,.45);border:1px solid rgba(237,224,198,.12);background:none;}
+.n-ghost:hover{color:var(--bone);border-color:rgba(237,224,198,.3);}
+.n-solid{color:var(--black);background:var(--ember);border:1px solid transparent;}
+.n-solid:hover{background:var(--brass);}
+.nav-user-bar{display:none;align-items:center;gap:.9rem;}
+.nav-av{width:30px;height:30px;border-radius:50%;background:var(--ember);display:flex;align-items:center;justify-content:center;font-family:"Bebas Neue",sans-serif;font-size:.72rem;color:var(--black);}
+.nav-un{font-family:"Bebas Neue",sans-serif;font-size:.68rem;letter-spacing:.15em;color:var(--bone);}
+.nav-ua{font-family:"Bebas Neue",sans-serif;font-size:.68rem;letter-spacing:.15em;color:rgba(237,224,198,.35);background:none;transition:color .2s;}
+.nav-ua:hover{color:var(--brass);}
+@media(max-width:800px){.nav-links{display:none;}}
+
+/* REVEALS */
+.rv{opacity:0;transform:translateY(40px);transition:opacity .85s var(--ease),transform .85s var(--ease);}
+.rv.vi{opacity:1;transform:translateY(0);}
+.rv.d1{transition-delay:.1s!important;}.rv.d2{transition-delay:.2s!important;}
+.rv.d3{transition-delay:.3s!important;}.rv.d4{transition-delay:.42s!important;}
+.rv.d5{transition-delay:.55s!important;}.rv.d6{transition-delay:.7s!important;}
+.split-line{display:block;overflow:hidden;line-height:1.02;}
+.split-line .sl-in{display:block;transform:translateY(108%);transition:transform 1.1s var(--ease);}
+.split-line.vi .sl-in{transform:translateY(0);}
+.sl-d1 .sl-in{transition-delay:.18s;}.sl-d2 .sl-in{transition-delay:.34s;}
+.sl-d3 .sl-in{transition-delay:.5s;}.sl-d4 .sl-in{transition-delay:.66s;}
+
+/* SHARED */
+.ey{font-family:"Bebas Neue",sans-serif;font-size:.62rem;letter-spacing:.38em;color:var(--ember);display:flex;align-items:center;gap:.8rem;}
+.ey::before{content:"";width:22px;height:1px;background:var(--ember);flex-shrink:0;}
+.sec-rule{width:100%;height:1px;background:rgba(237,224,198,.055);}
+
+/* HERO */
+#hero{position:relative;min-height:100vh;display:flex;align-items:flex-end;overflow:hidden;padding:0 4.5vw 9vh;}
+#hCvs{position:absolute;inset:0;z-index:0;width:100%;height:100%;}
+.h-ov{position:absolute;inset:0;z-index:1;background:radial-gradient(ellipse 70% 60% at 78% 35%,rgba(197,56,24,.1),transparent 58%),linear-gradient(to top,var(--black) 0%,rgba(5,3,2,.5) 42%,rgba(5,3,2,.08) 100%);}
+.h-cnt{position:relative;z-index:2;width:100%;}
+.h-top{margin-bottom:3.5rem;}
+.h-eye{margin-bottom:2.4rem;}
+.h-t{font-family:"Cormorant Garamond",serif;font-weight:700;font-size:clamp(5rem,14.5vw,14.5rem);line-height:.855;text-transform:uppercase;letter-spacing:-.02em;color:var(--bone);}
+.h-t em{font-style:italic;color:var(--ember);}
+.h-bot{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:2rem;}
+.h-desc{font-size:.9rem;line-height:1.82;color:rgba(237,224,198,.38);max-width:320px;}
+.h-acts{display:flex;gap:1.1rem;align-items:center;flex-wrap:wrap;}
+.btn-p{font-family:"Bebas Neue",sans-serif;font-size:.82rem;letter-spacing:.2em;color:var(--black);background:var(--ember);padding:1.05rem 2.6rem;display:inline-block;transition:background .22s;border:none;}
+.btn-p:hover{background:var(--brass);}
+.btn-t{font-family:"Bebas Neue",sans-serif;font-size:.82rem;letter-spacing:.2em;color:rgba(237,224,198,.45);border:none;background:none;border-bottom:1px solid rgba(237,224,198,.15);padding-bottom:.15rem;transition:color .22s,border-color .22s;display:inline-block;}
+.btn-t:hover{color:var(--brass);border-color:var(--brass);}
+.h-badges{display:flex;gap:2.2rem;}
+.hb{display:flex;flex-direction:column;gap:.25rem;}
+.hb-n{font-family:"Cormorant Garamond",serif;font-size:1.7rem;font-weight:700;color:var(--gold);line-height:1;}
+.hb-l{font-family:"Bebas Neue",sans-serif;font-size:.6rem;letter-spacing:.28em;color:rgba(237,224,198,.28);}
+.h-scroll-hint{position:absolute;bottom:3vh;right:4.5vw;z-index:2;display:flex;flex-direction:column;align-items:center;gap:.6rem;opacity:0;animation:fadein .8s ease 3.2s forwards;}
+.hs-txt{font-family:"Bebas Neue",sans-serif;font-size:.55rem;letter-spacing:.38em;color:rgba(237,224,198,.18);writing-mode:vertical-rl;}
+.hs-bar{width:1px;height:52px;background:linear-gradient(to bottom,var(--ember),transparent);animation:pulse-bar 2.5s ease-in-out infinite;}
+@keyframes pulse-bar{0%,100%{transform:scaleY(1);transform-origin:top}50%{transform:scaleY(.2);transform-origin:top}}
+@keyframes fadein{to{opacity:1}}
+
+/* BUTTONS */
+.btn-lg{font-family:"Bebas Neue",sans-serif;font-size:.95rem;letter-spacing:.24em;color:var(--black);background:var(--ember);padding:1.3rem 3.6rem;border:none;transition:background .25s;display:inline-block;}
+.btn-lg:hover{background:var(--brass);}
+.btn-lgo{font-family:"Bebas Neue",sans-serif;font-size:.95rem;letter-spacing:.24em;color:rgba(237,224,198,.42);border:1px solid rgba(237,224,198,.14);padding:1.3rem 3.6rem;background:none;transition:all .25s;display:inline-block;}
+.btn-lgo:hover{color:var(--brass);border-color:var(--brass);}
+
+/* MARQUEE */
+.mq-w{background:var(--ember);overflow:hidden;padding:.78rem 0;white-space:nowrap;position:relative;z-index:2;}
+.mq-t{display:inline-flex;animation:mq 28s linear infinite;}
+.mq-i{font-family:"Bebas Neue",sans-serif;font-size:.72rem;letter-spacing:.28em;color:var(--black);padding:0 2.4rem;opacity:.88;}
+.mq-sep{color:var(--black);opacity:.22;padding:0 .3rem;}
+@keyframes mq{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+/* STATEMENT */
+#statement{padding:16vh 4.5vw;background:var(--deep);}
+.st-kicker{margin-bottom:4rem;}
+.st-text{font-family:"Cormorant Garamond",serif;font-weight:300;font-size:clamp(2rem,5.5vw,5.5rem);line-height:1.18;color:var(--bone);max-width:1080px;}
+.st-text em{font-style:italic;color:var(--ember);}
+.st-text strong{font-weight:700;}
+.st-rule{margin:8vh 0;}
+.st-stats{display:flex;justify-content:space-between;flex-wrap:wrap;gap:3rem;}
+.sst{display:flex;flex-direction:column;gap:.3rem;}
+.sst-n{font-family:"Cormorant Garamond",serif;font-size:clamp(2.4rem,5vw,5rem);font-weight:700;color:var(--gold);line-height:1;}
+.sst-l{font-family:"Bebas Neue",sans-serif;font-size:.6rem;letter-spacing:.3em;color:var(--ash);}
+
+/* ABOUT */
+#about{display:grid;grid-template-columns:1fr 1fr;min-height:88vh;background:var(--black);}
+.ab-vis{position:relative;overflow:hidden;background:var(--char);display:flex;align-items:center;justify-content:center;min-height:500px;}
+.ab-vbg{position:absolute;inset:0;background:radial-gradient(ellipse 50% 70% at 50% 85%,rgba(197,56,24,.2),transparent 60%),linear-gradient(155deg,#1E1408,#0C0907);}
+.ab-big{font-family:"Cormorant Garamond",serif;font-weight:700;font-size:clamp(12rem,20vw,22rem);line-height:1;color:rgba(237,224,198,.022);position:absolute;bottom:-3rem;left:-2rem;user-select:none;pointer-events:none;}
+.ab-flame{position:relative;z-index:1;font-size:clamp(5rem,10vw,9rem);animation:flicker 3.2s ease-in-out infinite;filter:drop-shadow(0 0 60px rgba(224,78,32,.65));}
+@keyframes flicker{0%,100%{transform:scaleY(1) scaleX(1)}20%{transform:scaleY(1.08) scaleX(.96)}45%{transform:scaleY(.95) scaleX(1.02)}75%{transform:scaleY(1.05) scaleX(.98)}}
+.ab-cnt{padding:9vh 5vw;display:flex;flex-direction:column;justify-content:center;gap:2.6rem;}
+.ab-h{font-family:"Cormorant Garamond",serif;font-weight:700;font-size:clamp(2.8rem,5.5vw,5.5rem);line-height:.9;text-transform:uppercase;color:var(--bone);}
+.ab-h em{font-style:italic;color:var(--ember);display:block;}
+.ab-p{font-size:.88rem;line-height:1.9;color:rgba(237,224,198,.42);max-width:440px;}
+.ab-pull{font-family:"Cormorant Garamond",serif;font-style:italic;font-size:1.15rem;color:rgba(237,224,198,.55);line-height:1.6;border-left:2px solid var(--ember);padding-left:1.4rem;max-width:380px;}
+@media(max-width:780px){#about{grid-template-columns:1fr}.ab-vis{min-height:280px}}
+
+/* CUTS */
+#cuts{padding:13vh 4.5vw;background:var(--deep);}
+.cuts-top{margin-bottom:7vh;}
+.cuts-row{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:2rem;}
+.cuts-h{font-family:"Cormorant Garamond",serif;font-weight:700;font-size:clamp(4rem,9vw,9.5rem);line-height:.87;text-transform:uppercase;color:var(--bone);}
+.cuts-h em{font-style:italic;color:var(--ember);}
+.c-tabs{display:flex;border:1px solid rgba(237,224,198,.09);}
+.c-tab{font-family:"Bebas Neue",sans-serif;font-size:.68rem;letter-spacing:.2em;color:rgba(237,224,198,.3);background:none;border:none;padding:.62rem 1.4rem;border-right:1px solid rgba(237,224,198,.09);transition:all .2s;}
+.c-tab:last-child{border-right:none;}
+.c-tab.on,.c-tab:hover{background:var(--ember);color:var(--black);}
+.cuts-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:rgba(237,224,198,.055);}
+@media(max-width:960px){.cuts-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.cuts-grid{grid-template-columns:1fr}}
+.cc{background:var(--black);padding:2.6rem;position:relative;overflow:hidden;transition:background .28s;}
+.cc-glyph{position:absolute;top:1rem;right:1.4rem;font-size:5rem;opacity:0;transition:opacity .4s,transform .4s;transform:scale(.6) rotate(-12deg);pointer-events:none;}
+.cc:hover .cc-glyph{opacity:.1;transform:scale(1) rotate(-3deg);}
+.cc::after{content:"";position:absolute;top:0;left:0;width:0;height:2px;background:var(--ember);transition:width .45s var(--ease);}
+.cc:hover{background:var(--char);}
+.cc:hover::after{width:100%;}
+.cc-cat{font-family:"Bebas Neue",sans-serif;font-size:.58rem;letter-spacing:.3em;color:var(--ember);margin-bottom:1.1rem;}
+.cc-name{font-family:"Cormorant Garamond",serif;font-size:1.55rem;font-weight:700;color:var(--bone);line-height:1.1;margin-bottom:.6rem;}
+.cc-desc{font-size:.81rem;line-height:1.75;color:rgba(237,224,198,.35);margin-bottom:1.9rem;}
+.cc-foot{display:flex;justify-content:space-between;align-items:center;}
+.cc-price{font-family:"Bebas Neue",sans-serif;font-size:1.1rem;letter-spacing:.06em;color:var(--gold);}
+.cc-add{font-family:"Bebas Neue",sans-serif;font-size:.6rem;letter-spacing:.18em;color:var(--black);background:var(--ember);border:none;padding:.42rem 1rem;opacity:0;transition:opacity .22s,background .22s;}
+.cc:hover .cc-add{opacity:1;}
+.cc-add:hover{background:var(--brass);}
+
+/* METHOD */
+#method{padding:13vh 4.5vw;background:var(--char);}
+.mth-top{margin-bottom:9vh;}
+.mth-h{font-family:"Cormorant Garamond",serif;font-weight:700;font-size:clamp(3.2rem,7.5vw,7.5rem);line-height:.88;text-transform:uppercase;color:var(--bone);}
+.mth-h em{font-style:italic;color:var(--ember);}
+.mth-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5vw;}
+@media(max-width:780px){.mth-grid{grid-template-columns:1fr;gap:3.5rem}}
+.ms{padding-top:2.2rem;border-top:1px solid rgba(237,224,198,.06);position:relative;}
+.ms-bar{position:absolute;top:-1px;left:0;width:0;height:1px;background:var(--ember);transition:width 1.1s var(--ease);}
+.ms.vi .ms-bar{width:60px;}
+.ms-n{font-family:"Cormorant Garamond",serif;font-size:5.5rem;font-weight:700;color:rgba(237,224,198,.03);line-height:1;margin-bottom:-1.8rem;}
+.ms-ico{font-size:1.8rem;margin-bottom:1rem;}
+.ms-title{font-family:"Bebas Neue",sans-serif;font-size:1.75rem;letter-spacing:.09em;color:var(--bone);margin-bottom:.9rem;}
+.ms-txt{font-size:.84rem;line-height:1.85;color:rgba(237,224,198,.38);}
+
+/* REVIEWS */
+#reviews{padding:13vh 4.5vw;background:var(--deep);}
+.rv-top{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:7vh;flex-wrap:wrap;gap:2rem;}
+.rv-h{font-family:"Cormorant Garamond",serif;font-weight:700;font-size:clamp(2.8rem,5.5vw,5.5rem);text-transform:uppercase;line-height:.88;color:var(--bone);}
+.rv-h em{font-style:italic;color:var(--ember);}
+.rat{display:flex;align-items:center;gap:1.2rem;}
+.rat-n{font-family:"Cormorant Garamond",serif;font-size:5.5rem;font-weight:700;color:var(--gold);line-height:1;}
+.rat-r{display:flex;flex-direction:column;gap:.3rem;}
+.rat-stars{color:var(--gold);font-size:.95rem;letter-spacing:.1em;}
+.rat-ct{font-family:"Bebas Neue",sans-serif;font-size:.6rem;letter-spacing:.28em;color:var(--ash);}
+.rv-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:rgba(237,224,198,.04);}
+@media(max-width:960px){.rv-cards{grid-template-columns:1fr}}
+.rvc{background:var(--char);padding:3rem;}
+.rvc-s{color:var(--gold);font-size:.85rem;margin-bottom:1.5rem;}
+.rvc-q{font-family:"Cormorant Garamond",serif;font-size:1.12rem;font-style:italic;line-height:1.68;color:rgba(237,224,198,.62);margin-bottom:2.2rem;padding-left:.5rem;position:relative;}
+.rvc-q::before{content:"\201C";position:absolute;left:-.4rem;top:-.6rem;font-size:3rem;color:rgba(197,56,24,.12);font-family:"Cormorant Garamond",serif;line-height:1;}
+.rvc-by{font-family:"Bebas Neue",sans-serif;font-size:.62rem;letter-spacing:.3em;color:var(--gold);}
+
+/* CTA */
+#cta{background:var(--coal);padding:18vh 4.5vw;text-align:center;position:relative;overflow:hidden;}
+.cta-glow{position:absolute;inset:0;background:radial-gradient(ellipse 52% 62% at 50% 50%,rgba(197,56,24,.12),transparent 62%);pointer-events:none;}
+.cta-ey{justify-content:center;margin-bottom:2.4rem;}
+.cta-h{font-family:"Cormorant Garamond",serif;font-weight:700;font-style:italic;font-size:clamp(4rem,11.5vw,11.5rem);line-height:.86;color:var(--bone);margin-bottom:1.6rem;}
+.cta-h em{font-style:normal;color:var(--ember);}
+.cta-s{font-size:.88rem;color:rgba(237,224,198,.32);margin-bottom:4.5rem;letter-spacing:.04em;}
+.cta-btns{display:flex;gap:1.4rem;justify-content:center;flex-wrap:wrap;}
+
+/* FIND US */
+#findus{background:var(--deep);padding:13vh 4.5vw;display:grid;grid-template-columns:1fr 1fr;gap:8vw;align-items:center;}
+@media(max-width:780px){#findus{grid-template-columns:1fr}}
+.fu-h{font-family:"Cormorant Garamond",serif;font-weight:700;font-size:clamp(2.8rem,5.5vw,5.5rem);text-transform:uppercase;line-height:.9;color:var(--bone);margin-bottom:5vh;}
+.fu-h em{font-style:italic;color:var(--ember);}
+.fu-rows{display:flex;flex-direction:column;}
+.fu-row{display:grid;grid-template-columns:88px 1fr;gap:.8rem;padding:1.6rem 0;border-bottom:1px solid rgba(237,224,198,.06);}
+.fu-l{font-family:"Bebas Neue",sans-serif;font-size:.6rem;letter-spacing:.3em;color:var(--ember);padding-top:.18rem;}
+.fu-v{font-size:.88rem;line-height:1.75;color:rgba(237,224,198,.52);}
+.fu-v a{color:rgba(237,224,198,.52);transition:color .2s;}
+.fu-v a:hover{color:var(--brass);}
+.open-sig{display:inline-flex;align-items:center;gap:.5rem;margin-top:.4rem;font-family:"Bebas Neue",sans-serif;font-size:.6rem;letter-spacing:.22em;color:#5CD08A;}
+.sig-dot{width:6px;height:6px;background:#5CD08A;border-radius:50%;animation:pdot 2.2s ease-in-out infinite;}
+@keyframes pdot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.5)}}
+.map-box{background:var(--char);border:1px solid rgba(237,224,198,.06);min-height:380px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.6rem;position:relative;overflow:hidden;}
+.map-bg{position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 39px,rgba(237,224,198,.022) 39px,rgba(237,224,198,.022) 40px),repeating-linear-gradient(90deg,transparent,transparent 39px,rgba(237,224,198,.022) 39px,rgba(237,224,198,.022) 40px),radial-gradient(ellipse 70% 60% at 50% 85%,rgba(197,56,24,.12),transparent 60%);}
+.map-pin{font-size:3.6rem;position:relative;z-index:1;filter:drop-shadow(0 8px 30px rgba(197,56,24,.6));animation:pinfl 3.5s ease-in-out infinite;}
+@keyframes pinfl{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+.map-addr{font-family:"Bebas Neue",sans-serif;font-size:.67rem;letter-spacing:.2em;color:rgba(237,224,198,.25);text-align:center;line-height:1.85;position:relative;z-index:1;}
+.map-cta{font-family:"Bebas Neue",sans-serif;font-size:.7rem;letter-spacing:.2em;color:var(--black);background:var(--ember);border:none;padding:.72rem 2.2rem;transition:background .22s;position:relative;z-index:1;}
+.map-cta:hover{background:var(--brass);}
+
+/* FOOTER */
+footer{background:#030201;border-top:1px solid rgba(237,224,198,.04);padding:5vh 4.5vw;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:2rem;}
+@media(max-width:780px){footer{grid-template-columns:1fr;text-align:center}}
+.ft-brand{font-family:"Cormorant Garamond",serif;font-size:1.45rem;font-style:italic;font-weight:600;color:var(--gold);}
+.ft-brand span{display:block;font-family:"Bebas Neue",sans-serif;font-size:.56rem;font-style:normal;letter-spacing:.38em;color:var(--smoke);margin-top:.3rem;}
+.ft-links{display:flex;gap:1.8rem;list-style:none;justify-content:center;flex-wrap:wrap;}
+.ft-links a,.ft-links button{font-family:"Bebas Neue",sans-serif;font-size:.6rem;letter-spacing:.22em;color:var(--smoke);background:none;border:none;transition:color .2s;}
+.ft-links a:hover,.ft-links button:hover{color:var(--gold);}
+.ft-copy{font-family:"Bebas Neue",sans-serif;font-size:.56rem;letter-spacing:.16em;color:rgba(62,54,48,.55);text-align:right;}
+@media(max-width:780px){.ft-copy{text-align:center}}
+
+/* TOAST */
+.toast{position:fixed;bottom:2.5rem;left:50%;transform:translateX(-50%) translateY(16px);background:var(--char);border:1px solid rgba(237,224,198,.08);border-left:2px solid var(--ember);color:var(--bone);font-family:"Bebas Neue",sans-serif;font-size:.72rem;letter-spacing:.18em;padding:.82rem 2.2rem;z-index:9500;opacity:0;transition:opacity .28s,transform .28s;white-space:nowrap;pointer-events:none;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* MODALS */
+.mo{position:fixed;inset:0;z-index:3000;background:rgba(5,3,2,.94);backdrop-filter:blur(20px);display:flex;align-items:center;justify-content:center;padding:1.5rem;opacity:0;visibility:hidden;transition:opacity .32s ease,visibility .32s ease;}
+.mo.open{opacity:1;visibility:visible;}
+.mo-box{background:var(--char);border:1px solid rgba(237,224,198,.07);width:100%;max-width:520px;max-height:92vh;overflow-y:auto;position:relative;transform:translateY(28px);transition:transform .42s var(--ease);}
+.mo.open .mo-box{transform:translateY(0);}
+.mo-box.wide{max-width:740px;}
+.mo-x{position:absolute;top:1.3rem;right:1.3rem;background:none;border:none;color:rgba(237,224,198,.3);font-size:1.2rem;line-height:1;transition:color .18s;}
+.mo-x:hover{color:var(--bone);}
+.mo-head{padding:2.6rem 2.6rem 0;}
+.mo-ey{font-family:"Bebas Neue",sans-serif;font-size:.58rem;letter-spacing:.32em;color:var(--ember);display:flex;align-items:center;gap:.6rem;margin-bottom:.8rem;}
+.mo-ey::before{content:"";width:16px;height:1px;background:var(--ember);}
+.mo-title{font-family:"Cormorant Garamond",serif;font-size:2.2rem;font-weight:700;line-height:1;color:var(--bone);margin-bottom:.45rem;}
+.mo-title em{font-style:italic;color:var(--ember);}
+.mo-sub{font-size:.82rem;color:rgba(237,224,198,.32);line-height:1.62;}
+.mo-body{padding:2rem 2.6rem 2.6rem;}
+.m-tabs{display:flex;border-bottom:1px solid rgba(237,224,198,.07);margin-bottom:2rem;}
+.m-tab{font-family:"Bebas Neue",sans-serif;font-size:.7rem;letter-spacing:.2em;color:rgba(237,224,198,.3);background:none;border:none;padding:.88rem 1.6rem;border-bottom:2px solid transparent;transition:all .2s;margin-bottom:-1px;}
+.m-tab.on{color:var(--bone);border-bottom-color:var(--ember);}
+.m-tab:hover{color:var(--bone);}
+.fg{margin-bottom:1.5rem;}
+.fl{font-family:"Bebas Neue",sans-serif;font-size:.6rem;letter-spacing:.28em;color:rgba(237,224,198,.38);display:block;margin-bottom:.55rem;}
+.fi{width:100%;background:rgba(237,224,198,.03);border:1px solid rgba(237,224,198,.09);color:var(--bone);font-size:.88rem;padding:.9rem 1.1rem;outline:none;transition:border-color .2s;-webkit-appearance:none;}
+.fi:focus{border-color:rgba(197,56,24,.5);}
+.fi::placeholder{color:rgba(237,224,198,.18);}
+.fe{font-size:.74rem;color:#d95858;margin-top:.45rem;display:none;}
+.fe.show{display:block;}
+.fs{font-family:"Bebas Neue",sans-serif;font-size:.82rem;letter-spacing:.2em;color:var(--black);background:var(--ember);border:none;padding:1.05rem;width:100%;transition:background .22s,opacity .2s;margin-top:.4rem;}
+.fs:hover{background:var(--brass);}
+.fs:disabled{opacity:.45;}
+.ff-note{text-align:center;margin-top:1.4rem;font-size:.8rem;color:rgba(237,224,198,.28);}
+.ff-note button{background:none;border:none;color:var(--brass);font-size:.8rem;font-family:"DM Sans",sans-serif;transition:color .2s;}
+.ff-note button:hover{color:var(--gold);}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(237,224,198,.3);border-top-color:var(--bone);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:.5rem;}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ACCOUNT */
+.ac-profile{display:flex;align-items:center;gap:1.5rem;padding:1.8rem;background:rgba(237,224,198,.025);border:1px solid rgba(237,224,198,.06);margin-bottom:2rem;}
+.ac-av{width:56px;height:56px;border-radius:50%;background:var(--ember);display:flex;align-items:center;justify-content:center;font-family:"Cormorant Garamond",serif;font-size:1.5rem;font-weight:700;color:var(--black);flex-shrink:0;}
+.ac-name{font-family:"Cormorant Garamond",serif;font-size:1.5rem;font-weight:700;color:var(--bone);}
+.ac-email{font-size:.8rem;color:rgba(237,224,198,.35);}
+.ac-since{font-family:"Bebas Neue",sans-serif;font-size:.58rem;letter-spacing:.22em;color:var(--ash);margin-top:.3rem;}
+.ac-sec{margin-bottom:2rem;}
+.ac-sec-t{font-family:"Bebas Neue",sans-serif;font-size:.62rem;letter-spacing:.28em;color:var(--ember);margin-bottom:1rem;padding-bottom:.6rem;border-bottom:1px solid rgba(237,224,198,.06);}
+.ac-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:rgba(237,224,198,.04);}
+.ac-stat{background:var(--deep);padding:1.2rem;text-align:center;}
+.ac-stat-n{font-family:"Cormorant Garamond",serif;font-size:1.9rem;font-weight:700;color:var(--gold);line-height:1;}
+.ac-stat-l{font-family:"Bebas Neue",sans-serif;font-size:.56rem;letter-spacing:.2em;color:var(--ash);margin-top:.3rem;}
+.ord-list{display:flex;flex-direction:column;gap:1px;}
+.ord-item{background:var(--deep);padding:1.1rem;display:flex;justify-content:space-between;align-items:center;}
+.oi-n{font-size:.84rem;color:var(--bone);}
+.oi-d{font-family:"Bebas Neue",sans-serif;font-size:.58rem;letter-spacing:.14em;color:var(--ash);}
+.oi-p{font-family:"Bebas Neue",sans-serif;font-size:.84rem;color:var(--gold);}
+.ord-empty{font-size:.84rem;color:rgba(237,224,198,.25);font-style:italic;padding:1.2rem 0;}
+.ac-btns{display:flex;gap:.8rem;margin-bottom:2rem;}
+.btn-lo{font-family:"Bebas Neue",sans-serif;font-size:.72rem;letter-spacing:.18em;color:rgba(237,224,198,.4);border:1px solid rgba(237,224,198,.1);background:none;padding:.72rem 1.8rem;transition:all .2s;}
+.btn-lo:hover{color:var(--bone);border-color:rgba(237,224,198,.28);}
+.dz{border:1px solid rgba(216,70,70,.16);padding:1.6rem;}
+.dz-t{font-family:"Bebas Neue",sans-serif;font-size:.62rem;letter-spacing:.28em;color:#d95858;margin-bottom:.7rem;}
+.dz-p{font-size:.82rem;color:rgba(237,224,198,.35);margin-bottom:1.3rem;line-height:1.65;}
+.btn-del{font-family:"Bebas Neue",sans-serif;font-size:.72rem;letter-spacing:.18em;color:var(--black);background:#b02828;border:none;padding:.72rem 1.8rem;transition:background .2s;}
+.btn-del:hover{background:#d63030;}
+
+/* CART / ORDER */
+.mq-menu{display:flex;flex-direction:column;gap:1px;margin-bottom:2rem;}
+.mq-row{background:var(--deep);padding:1rem 1.2rem;display:flex;justify-content:space-between;align-items:center;gap:1rem;transition:background .2s;}
+.mq-row:hover{background:var(--coal);}
+.mq-rn{font-size:.85rem;color:var(--bone);}
+.mq-rp{font-family:"Bebas Neue",sans-serif;font-size:.78rem;color:var(--ash);}
+.mq-ra{background:none;border:1px solid rgba(197,56,24,.38);color:var(--ember);font-family:"Bebas Neue",sans-serif;font-size:.6rem;letter-spacing:.15em;padding:.35rem .8rem;transition:all .2s;flex-shrink:0;}
+.mq-ra:hover{background:var(--ember);color:var(--black);}
+.cart-rows{display:flex;flex-direction:column;gap:1px;}
+.cr{background:var(--deep);padding:1.1rem 1.2rem;display:flex;justify-content:space-between;align-items:center;gap:1rem;}
+.cr-n{font-size:.86rem;color:var(--bone);}
+.cr-r{display:flex;align-items:center;gap:.8rem;}
+.cr-p{font-family:"Bebas Neue",sans-serif;font-size:.88rem;color:var(--gold);}
+.cr-x{background:none;border:none;color:rgba(237,224,198,.22);font-size:.9rem;line-height:1;transition:color .18s;}
+.cr-x:hover{color:#d95858;}
+.cart-empty{padding:2.2rem;text-align:center;font-size:.86rem;color:rgba(237,224,198,.25);font-style:italic;}
+.cart-total{display:flex;justify-content:space-between;align-items:center;padding:1.3rem;border-top:1px solid rgba(237,224,198,.06);}
+.ct-l{font-family:"Bebas Neue",sans-serif;font-size:.7rem;letter-spacing:.28em;color:rgba(237,224,198,.35);}
+.ct-v{font-family:"Cormorant Garamond",serif;font-size:2rem;font-weight:700;color:var(--gold);}
+
+/* PAYMENT */
+.p-tabs{display:flex;border-bottom:1px solid rgba(237,224,198,.07);margin-bottom:1.8rem;}
+.p-tab{font-family:"Bebas Neue",sans-serif;font-size:.68rem;letter-spacing:.2em;color:rgba(237,224,198,.3);background:none;border:none;padding:.85rem 1.4rem;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .2s;}
+.p-tab.on{color:var(--bone);border-bottom-color:var(--ember);}
+.p-tab:hover{color:var(--bone);}
+.p-sec{display:none;}.p-sec.on{display:block;}
+.banks{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:rgba(237,224,198,.05);margin-bottom:1.8rem;}
+@media(max-width:480px){.banks{grid-template-columns:repeat(2,1fr)}}
+.bk{background:var(--deep);padding:1.2rem;display:flex;flex-direction:column;align-items:center;gap:.55rem;transition:background .22s;border:2px solid transparent;}
+.bk:hover{background:var(--coal);}
+.bk.sel{border-color:var(--ember);background:rgba(197,56,24,.06);}
+.bk-logo{width:38px;height:38px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-family:"Bebas Neue",sans-serif;font-size:.75rem;color:#fff;letter-spacing:.04em;}
+.bk-name{font-family:"Bebas Neue",sans-serif;font-size:.56rem;letter-spacing:.12em;color:rgba(237,224,198,.48);text-align:center;}
+.bk-detail{background:var(--deep);border:1px solid rgba(237,224,198,.07);padding:1.5rem;margin-bottom:1.5rem;display:none;}
+.bk-detail.show{display:block;}
+.bdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem;padding-bottom:.75rem;border-bottom:1px solid rgba(237,224,198,.04);}
+.bdr:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none;}
+.bdr-l{font-family:"Bebas Neue",sans-serif;font-size:.58rem;letter-spacing:.24em;color:var(--ash);}
+.bdr-v{font-size:.86rem;color:var(--bone);}
+.bdr-cp{font-family:"Bebas Neue",sans-serif;font-size:.56rem;letter-spacing:.16em;color:var(--ember);background:none;border:none;transition:color .18s;}
+.bdr-cp:hover{color:var(--brass);}
+.pp-box{background:var(--deep);border:1px solid rgba(237,224,198,.07);padding:2.5rem;text-align:center;}
+.pp-brand{font-family:"Bebas Neue",sans-serif;font-size:2.5rem;letter-spacing:.06em;margin-bottom:.5rem;}
+.pp-blue{color:#0070BA;}.pp-dark{color:#003087;}
+.pp-sub{font-size:.82rem;color:rgba(237,224,198,.35);margin-bottom:1.8rem;line-height:1.65;}
+.pp-amt{font-family:"Cormorant Garamond",serif;font-size:2.5rem;font-weight:700;color:var(--gold);margin-bottom:1.8rem;}
+.pp-go{background:#0070BA;border:none;color:#fff;font-family:"Bebas Neue",sans-serif;font-size:.84rem;letter-spacing:.22em;padding:1.05rem;width:100%;transition:background .2s;}
+.pp-go:hover{background:#005fa0;}
+.pp-fine{font-size:.7rem;color:rgba(237,224,198,.18);margin-top:1rem;}
+.p-summary{background:rgba(237,224,198,.025);border:1px solid rgba(237,224,198,.055);padding:1.3rem;margin-bottom:1.8rem;}
+.psr{display:flex;justify-content:space-between;margin-bottom:.6rem;}
+.psr-l{font-size:.82rem;color:rgba(237,224,198,.38);}
+.psr-v{font-size:.82rem;color:var(--bone);}
+.pst{border-top:1px solid rgba(237,224,198,.07);padding-top:.85rem;margin-top:.85rem;display:flex;justify-content:space-between;align-items:center;}
+.pst-l{font-family:"Bebas Neue",sans-serif;font-size:.7rem;letter-spacing:.22em;color:rgba(237,224,198,.35);}
+.pst-v{font-family:"Cormorant Garamond",serif;font-size:1.5rem;font-weight:700;color:var(--gold);}
+.p-confirm{font-family:"Bebas Neue",sans-serif;font-size:.84rem;letter-spacing:.2em;color:var(--black);background:var(--ember);border:none;padding:1.1rem;width:100%;transition:background .25s;margin-top:1rem;}
+.p-confirm:hover{background:var(--brass);}
+.cf-ico{text-align:center;font-size:4.5rem;margin-bottom:1.4rem;}
+.cf-msg{text-align:center;font-size:.87rem;color:rgba(237,224,198,.45);line-height:1.72;margin-bottom:2rem;}
+.cf-ref{text-align:center;font-family:"Bebas Neue",sans-serif;font-size:.62rem;letter-spacing:.3em;color:var(--ash);margin-bottom:2rem;}
+.cf-ref span{color:var(--gold);}
+.del-warn{background:rgba(216,70,70,.05);border:1px solid rgba(216,70,70,.14);padding:1.3rem;margin-bottom:1.5rem;font-size:.82rem;color:rgba(237,224,198,.45);line-height:1.68;}
+.del-btns{display:flex;gap:.8rem;}
+.del-btns .btn-del{flex:1;}
+.btn-cancel{flex:1;font-family:"Bebas Neue",sans-serif;font-size:.72rem;letter-spacing:.18em;color:rgba(237,224,198,.4);background:none;border:1px solid rgba(237,224,198,.1);padding:.72rem;transition:all .2s;}
+.btn-cancel:hover{color:var(--bone);border-color:rgba(237,224,198,.28);}
+
+/* FIREBASE SETUP MODAL */
+.fbg-steps{display:flex;flex-direction:column;gap:1px;margin:1.5rem 0;}
+.fbg-step{background:var(--deep);padding:1.2rem 1.4rem;display:flex;align-items:flex-start;gap:1rem;}
+.fbg-num{font-family:"Cormorant Garamond",serif;font-size:1.5rem;font-weight:700;color:var(--ember);line-height:1;flex-shrink:0;width:28px;}
+.fbg-info{}
+.fbg-title{font-family:"Bebas Neue",sans-serif;font-size:.78rem;letter-spacing:.18em;color:var(--bone);margin-bottom:.3rem;}
+.fbg-desc{font-size:.8rem;color:rgba(237,224,198,.4);line-height:1.6;}
+.fbg-link{color:var(--brass);font-size:.8rem;}
+.fbg-code{background:var(--coal);border:1px solid rgba(237,224,198,.06);padding:1.2rem;margin-top:1rem;font-family:monospace;font-size:.75rem;color:var(--brass);line-height:1.7;overflow-x:auto;white-space:pre;}
+.fbg-note{font-size:.8rem;color:rgba(237,224,198,.35);line-height:1.65;padding:1rem;background:rgba(197,56,24,.06);border-left:2px solid var(--ember);margin-top:1.5rem;}
+</style>
+</head>
+<body>
+<div id="prog"></div>
+<div id="grain"></div>
+<div id="cDot"></div>
+<div id="cRing"></div>
+<div id="foodBg" aria-hidden="true"></div>
+
+<!-- FIREBASE SETUP BANNER -->
+<div id="setupBanner" class="show">
+  <span class="sb-msg">&#9889; Firebase not configured yet <span>|</span> Customer data will not be saved until you complete setup</span>
+  <button class="sb-btn" onclick="openMo('moSetup')">View Setup Guide</button>
+</div>
+
+<!-- PRELOADER -->
+<div id="pre">
+  <div class="pre-w"><span class="pre-brand">Smokesman Grill</span></div>
+  <div class="pre-divider"><div class="pre-line"></div><span class="pre-sub">Ago-Iwoye &middot; Est. in Fire</span><div class="pre-line"></div></div>
+  <div class="pre-bar"><div class="pre-fill"></div></div>
+</div>
+
+<!-- NAV -->
+<nav id="nav">
+  <a href="#hero" class="nav-logo">Smokesman Grill</a>
+  <ul class="nav-links">
+    <li><a href="#about" onclick="smoothTo('about');return false;">Story</a></li>
+    <li><a href="#cuts" onclick="smoothTo('cuts');return false;">The Cuts</a></li>
+    <li><a href="#method" onclick="smoothTo('method');return false;">Method</a></li>
+    <li><a href="#findus" onclick="smoothTo('findus');return false;">Find Us</a></li>
+  </ul>
+  <div class="nav-right">
+    <div id="navAuth" style="display:flex;gap:.7rem;">
+      <button class="n-btn n-ghost" onclick="openMo('moAuth','login')">Log In</button>
+      <button class="n-btn n-solid" onclick="openMo('moAuth','signup')">Sign Up</button>
+    </div>
+    <div class="nav-user-bar" id="navUser">
+      <div class="nav-av" id="nAv">S</div>
+      <span class="nav-un" id="nUn">User</span>
+      <button class="nav-ua" onclick="openMo('moAccount')">Account</button>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <canvas id="hCvs"></canvas>
+  <div class="h-ov"></div>
+  <div class="h-cnt">
+    <div class="h-top">
+      <div class="ey h-eye rv">Ago-Iwoye &middot; Ogun State &middot; Open 24 Hours</div>
+      <h1 class="h-t" id="hT">
+        <span class="split-line"><span class="sl-in">Smokes</span></span>
+        <span class="split-line sl-d2"><span class="sl-in"><em>man</em></span></span>
+        <span class="split-line sl-d4"><span class="sl-in">Grill</span></span>
+      </h1>
+    </div>
+    <div class="h-bot rv d6">
+      <p class="h-desc">Not just food. A ritual.<br>Fire, patience, uncompromising craft.</p>
+      <div class="h-acts">
+        <button class="btn-p mag" onclick="handleOrderNow()">Order Now</button>
+        <button class="btn-t" onclick="smoothTo('cuts')">View The Cuts &darr;</button>
+      </div>
+      <div class="h-badges">
+        <div class="hb"><span class="hb-n">3.8&#9733;</span><span class="hb-l">Rating</span></div>
+        <div class="hb"><span class="hb-n">24h</span><span class="hb-l">Open</span></div>
+        <div class="hb"><span class="hb-n">&#8358;6K+</span><span class="hb-l">From</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="h-scroll-hint"><span class="hs-txt">Scroll</span><div class="hs-bar"></div></div>
+</section>
+
+<!-- MARQUEE -->
+<div class="mq-w">
+  <div class="mq-t">
+    <span class="mq-i">Open 24 Hours</span><span class="mq-sep">&#10022;</span>
+    <span class="mq-i">Real Charcoal. Real Smoke.</span><span class="mq-sep">&#10022;</span>
+    <span class="mq-i">Ago-Iwoye, Ogun State</span><span class="mq-sep">&#10022;</span>
+    <span class="mq-i">&#8358;6,000 &ndash; &#8358;8,000 Per Person</span><span class="mq-sep">&#10022;</span>
+    <span class="mq-i">0815 561 5166</span><span class="mq-sep">&#10022;</span>
+    <span class="mq-i">West African Grill Culture</span><span class="mq-sep">&#10022;</span>
+    <span class="mq-i">Rated 3.8 &bull; 25 Reviews</span><span class="mq-sep">&#10022;</span>
+    <span class="mq-i">Open 24 Hours</span><span class="mq-sep">&#10022;</span>
+    <span class="mq-i">Real Charcoal. Real Smoke.</span><span class="mq-sep">&#10022;</span>
+    <span class="mq-i">Ago-Iwoye, Ogun State</span><span class="mq-sep">&#10022;</span>
+    <span class="mq-i">&#8358;6,000 &ndash; &#8358;8,000 Per Person</span><span class="mq-sep">&#10022;</span>
+    <span class="mq-i">0815 561 5166</span><span class="mq-sep">&#10022;</span>
+    <span class="mq-i">West African Grill Culture</span><span class="mq-sep">&#10022;</span>
+    <span class="mq-i">Rated 3.8 &bull; 25 Reviews</span><span class="mq-sep">&#10022;</span>
+  </div>
+</div>
+
+<!-- STATEMENT -->
+<section id="statement">
+  <div class="ey st-kicker rv">Our Belief</div>
+  <div class="sec-rule rv d1"></div>
+  <div style="height:6vh"></div>
+  <p class="st-text">
+    <span class="split-line rv"><span class="sl-in">Smokesman was built on one belief:</span></span>
+    <span class="split-line rv sl-d2"><span class="sl-in">the best flavour on earth comes from</span></span>
+    <span class="split-line rv sl-d3"><span class="sl-in"><em>fire,</em> patience, and <strong>uncompromising craft.</strong></span></span>
+  </p>
+  <div style="height:8vh"></div>
+  <div class="sec-rule rv"></div>
+  <div style="height:5vh"></div>
+  <div class="st-stats">
+    <div class="sst rv"><span class="sst-n">24h</span><span class="sst-l">Always Open</span></div>
+    <div class="sst rv d2"><span class="sst-n">3.8&#9733;</span><span class="sst-l">Customer Rating</span></div>
+    <div class="sst rv d3"><span class="sst-n">100%</span><span class="sst-l">Real Charcoal</span></div>
+    <div class="sst rv d4"><span class="sst-n">&#8358;6K+</span><span class="sst-l">From Per Person</span></div>
+  </div>
+</section>
+
+<!-- ABOUT -->
+<section id="about">
+  <div class="ab-vis">
+    <div class="ab-vbg"></div>
+    <span class="ab-big">01</span>
+    <span class="ab-flame">&#128293;</span>
+  </div>
+  <div class="ab-cnt">
+    <div class="ey rv">Origin Story</div>
+    <h2 class="ab-h rv d1">Born from<br><em>the pit</em></h2>
+    <p class="ab-p rv d2">At Itamerin Bus-Stop in Ago-Iwoye, Smokesman is not just a restaurant &mdash; it is a statement. Born from a deep love of smoke, spice, and the sacred tradition of the Nigerian grill.</p>
+    <blockquote class="ab-pull rv d3">&ldquo;Every piece of meat that leaves our pit carries hours of preparation and years of accumulated craft.&rdquo;</blockquote>
+    <div class="rv d4"><button class="btn-p mag" onclick="handleOrderNow()">Order Now</button></div>
+  </div>
+</section>
+
+<!-- CUTS -->
+<section id="cuts">
+  <div class="cuts-top">
+    <div class="cuts-row">
+      <div>
+        <div class="ey rv">What We Serve</div>
+        <h2 class="cuts-h rv d1">The<br><em>Cuts</em></h2>
+      </div>
+      <div class="c-tabs rv d2">
+        <button class="c-tab on" onclick="fCut('all',this)">All</button>
+        <button class="c-tab" onclick="fCut('grill',this)">Grill</button>
+        <button class="c-tab" onclick="fCut('sides',this)">Sides</button>
+        <button class="c-tab" onclick="fCut('drinks',this)">Drinks</button>
+      </div>
+    </div>
+  </div>
+  <div class="cuts-grid" id="cGrid">
+    <div class="cc rv" data-cat="grill" data-name="Smokesman Special Suya" data-price="3500"><span class="cc-glyph">&#127842;</span><div class="cc-cat">Signature &middot; Grill</div><div class="cc-name">Smokesman Special Suya</div><div class="cc-desc">Tender beef skewers in our house yaji blend &mdash; spice, groundnut, ginger &mdash; slow-grilled over open charcoal until edges char and centre runs with juice.</div><div class="cc-foot"><span class="cc-price">&#8358;3,500</span><button class="cc-add" onclick="addToCart(this)">+ Add</button></div></div>
+    <div class="cc rv d1" data-cat="grill" data-name="Whole Smoked Chicken" data-price="6500"><span class="cc-glyph">&#127831;</span><div class="cc-cat">Fan Favourite &middot; Grill</div><div class="cc-name">Whole Smoked Chicken</div><div class="cc-desc">Half or whole bird, brined overnight, rubbed with our spice paste, smoked low and slow until skin crisps and meat pulls clean from the bone.</div><div class="cc-foot"><span class="cc-price">&#8358;6,500</span><button class="cc-add" onclick="addToCart(this)">+ Add</button></div></div>
+    <div class="cc rv d2" data-cat="grill" data-name="Grilled Catfish" data-price="5500"><span class="cc-glyph">&#128031;</span><div class="cc-cat">Premium &middot; Grill</div><div class="cc-name">Grilled Catfish</div><div class="cc-desc">Fresh catfish scored deep, packed with peppers and spice, laid on hot charcoal. Served with a fierce pepper sauce that demands respect.</div><div class="cc-foot"><span class="cc-price">&#8358;5,500</span><button class="cc-add" onclick="addToCart(this)">+ Add</button></div></div>
+    <div class="cc rv d3" data-cat="grill" data-name="Smoked Goat Ribs" data-price="7000"><span class="cc-glyph">&#127830;</span><div class="cc-cat">Premium &middot; Grill</div><div class="cc-name">Smoked Goat Ribs</div><div class="cc-desc">Bone-in goat ribs, rubbed with herbs, smoke-roasted for hours until they surrender &mdash; rich, deep, entirely worth the wait.</div><div class="cc-foot"><span class="cc-price">&#8358;7,000</span><button class="cc-add" onclick="addToCart(this)">+ Add</button></div></div>
+    <div class="cc rv d4" data-cat="grill" data-name="Smoked Turkey Leg" data-price="4500"><span class="cc-glyph">&#127831;</span><div class="cc-cat">Special &middot; Grill</div><div class="cc-name">Smoked Turkey Leg &#127831;</div><div class="cc-desc">Whole turkey drumstick, seasoned with our proprietary spice blend and smoked to a deep mahogany finish. Enormous. Unforgettable.</div><div class="cc-foot"><span class="cc-price">&#8358;4,500</span><button class="cc-add" onclick="addToCart(this)">+ Add</button></div></div>
+    <div class="cc rv d5" data-cat="grill" data-name="Prime Rib-Eye Beef" data-price="8500"><span class="cc-glyph">&#129385;</span><div class="cc-cat">The Pinnacle &middot; Grill</div><div class="cc-name">Prime Rib-Eye Beef &#129385;</div><div class="cc-desc">Prime rib-eye grilled over fierce charcoal. Rested, sliced, plated with a smoky suya-spiced jus. The pinnacle of the menu.</div><div class="cc-foot"><span class="cc-price">&#8358;8,500</span><button class="cc-add" onclick="addToCart(this)">+ Add</button></div></div>
+    <div class="cc rv" data-cat="sides" data-name="Peppered Fried Plantain" data-price="800"><span class="cc-glyph">&#127820;</span><div class="cc-cat">Sides</div><div class="cc-name">Peppered Fried Plantain</div><div class="cc-desc">Ripe plantain fried golden, tossed in a spiced pepper reduction. The perfect companion to smoke and fire.</div><div class="cc-foot"><span class="cc-price">&#8358;800</span><button class="cc-add" onclick="addToCart(this)">+ Add</button></div></div>
+    <div class="cc rv d2" data-cat="sides" data-name="Smokesman Peppersoup" data-price="2000"><span class="cc-glyph">&#129373;</span><div class="cc-cat">Sides &middot; Late Night</div><div class="cc-name">Smokesman Peppersoup</div><div class="cc-desc">Rich aromatic broth with your choice of protein. Order this at 2am. You will wonder why you have not always done it.</div><div class="cc-foot"><span class="cc-price">&#8358;2,000</span><button class="cc-add" onclick="addToCart(this)">+ Add</button></div></div>
+    <div class="cc rv d4" data-cat="sides" data-name="Pasta and Smoky Tomato" data-price="2500"><span class="cc-glyph">&#127837;</span><div class="cc-cat">Sides &middot; Pasta</div><div class="cc-name">Pasta &amp; Smoky Tomato &#127837;</div><div class="cc-desc">Al dente spaghetti tossed in a house-made smoked tomato and pepper sauce with hints of West African spice.</div><div class="cc-foot"><span class="cc-price">&#8358;2,500</span><button class="cc-add" onclick="addToCart(this)">+ Add</button></div></div>
+    <div class="cc rv" data-cat="drinks" data-name="Zobo Delight" data-price="500"><span class="cc-glyph">&#129367;</span><div class="cc-cat">Drinks &middot; House-Made</div><div class="cc-name">Zobo Delight</div><div class="cc-desc">House hibiscus infusion with ginger and cloves, chilled and ready. One of the best things on the menu.</div><div class="cc-foot"><span class="cc-price">&#8358;500</span><button class="cc-add" onclick="addToCart(this)">+ Add</button></div></div>
+    <div class="cc rv d2" data-cat="drinks" data-name="Cold Selection" data-price="300"><span class="cc-glyph">&#129380;</span><div class="cc-cat">Drinks</div><div class="cc-name">Cold Selection</div><div class="cc-desc">Full range of chilled soft drinks, malt, water, and juices. Always cold. Always ready. Day or night.</div><div class="cc-foot"><span class="cc-price">From &#8358;300</span><button class="cc-add" onclick="addToCart(this)">+ Add</button></div></div>
+  </div>
+</section>
+
+<!-- METHOD -->
+<section id="method">
+  <div class="mth-top">
+    <div class="ey rv">How We Do It</div>
+    <h2 class="mth-h rv d1">The<br><em>Method</em></h2>
+  </div>
+  <div class="mth-grid">
+    <div class="ms rv"><div class="ms-bar"></div><div class="ms-n">01</div><div class="ms-ico">&#129474;</div><div class="ms-title">The Cure</div><div class="ms-txt">We start days before you arrive. Every cut is seasoned, marinated, and rested until the spice becomes part of the meat &mdash; not surface, but soul.</div></div>
+    <div class="ms rv d2"><div class="ms-bar"></div><div class="ms-n">02</div><div class="ms-ico">&#129683;</div><div class="ms-title">The Fire</div><div class="ms-txt">Real charcoal. Built by hand, managed by instinct, maintained for hours. The fire is not a tool &mdash; it is an ingredient. No gas. No shortcuts. No excuses.</div></div>
+    <div class="ms rv d4"><div class="ms-bar"></div><div class="ms-n">03</div><div class="ms-ico">&#128168;</div><div class="ms-title">The Smoke</div><div class="ms-txt">We do not rush smoke. Low heat. Long time. The result is a depth of flavour that cannot be faked or replicated. You taste the patience in every bite.</div></div>
+  </div>
+</section>
+
+<!-- REVIEWS -->
+<section id="reviews">
+  <div class="rv-top">
+    <div><div class="ey rv">What People Say</div><h2 class="rv-h rv d1">The<br><em>Word</em></h2></div>
+    <div class="rat rv d2"><div class="rat-n">3.8</div><div class="rat-r"><div class="rat-stars">&#9733;&#9733;&#9733;&#9733;&#9734;</div><div class="rat-ct">25 Google Reviews</div></div></div>
+  </div>
+  <div class="rv-cards">
+    <div class="rvc rv"><div class="rvc-s">&#9733;&#9733;&#9733;&#9733;&#9733;</div><p class="rvc-q">Best suya in Ago-Iwoye &mdash; full stop. The smoke flavour is deep, the portions generous, and I always order twice what I planned.</p><div class="rvc-by">Local Customer &middot; Google</div></div>
+    <div class="rvc rv d2"><div class="rvc-s">&#9733;&#9733;&#9733;&#9733;&#9734;</div><p class="rvc-q">The catfish is something else. Perfectly spiced, grilled with real care. The pepper sauce &mdash; I have been thinking about it for a week.</p><div class="rvc-by">Food Enthusiast &middot; Google</div></div>
+    <div class="rvc rv d4"><div class="rvc-s">&#9733;&#9733;&#9733;&#9733;&#9733;</div><p class="rvc-q">24 hours &mdash; that alone makes them different. But the late-night peppersoup is why I keep coming back. A genuine gem in Ogun State.</p><div class="rvc-by">Night Owl Regular &middot; Google</div></div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section id="cta">
+  <div class="cta-glow"></div>
+  <div class="ey cta-ey rv">Ready?</div>
+  <h2 class="cta-h rv d1">Taste<br><em>Fire</em></h2>
+  <p class="cta-s rv d2">Call us now or come find us at Itamerin Bus-Stop &mdash; we are always here.</p>
+  <div class="cta-btns rv d3">
+    <button class="btn-lg mag" onclick="handleOrderNow()">Order &amp; Pay Now</button>
+    <button class="btn-lgo" onclick="smoothTo('findus')">Get Directions</button>
+  </div>
+</section>
+
+<!-- FIND US -->
+<section id="findus">
+  <div>
+    <div class="ey rv">Come Find Us</div>
+    <h2 class="fu-h rv d1">We're<br><em>Here</em></h2>
+    <div class="fu-rows">
+      <div class="fu-row rv d2"><span class="fu-l">Address</span><span class="fu-v">WWWM+674 Itamerin Bus-Stop<br>Ago-Iwoye 120107, Ogun State</span></div>
+      <div class="fu-row rv d3"><span class="fu-l">Phone</span><span class="fu-v"><a href="tel:08155615166">0815 561 5166</a></span></div>
+      <div class="fu-row rv d4"><span class="fu-l">Hours</span><span class="fu-v">Every Day, Every Night<div class="open-sig"><span class="sig-dot"></span>Open 24 Hours</div></span></div>
+      <div class="fu-row rv d5"><span class="fu-l">Price</span><span class="fu-v">&#8358;6,000 &ndash; &#8358;8,000 per person</span></div>
+    </div>
+  </div>
+  <div class="map-box rv d3">
+    <div class="map-bg"></div>
+    <div class="map-pin">&#128205;</div>
+    <div class="map-addr">WWWM+674 Itamerin Bus-Stop<br>Ago-Iwoye &middot; Ogun State<br>1.7 km from town centre</div>
+    <a href="https://maps.google.com/?q=Smokesman+Grill+Ago-Iwoye" target="_blank" class="map-cta">Open Google Maps</a>
+  </div>
+</section>
+
+<footer>
+  <div class="ft-brand">Smokesman Grill<span>Ago-Iwoye &middot; Ogun State &middot; Open 24 Hours</span></div>
+  <ul class="ft-links">
+    <li><a href="#cuts" onclick="smoothTo('cuts');return false;">Menu</a></li>
+    <li><a href="#reviews" onclick="smoothTo('reviews');return false;">Reviews</a></li>
+    <li><button onclick="openMo('moAuth','login')">Log In</button></li>
+    <li><button onclick="openMo('moAuth','signup')">Sign Up</button></li>
+    <li><a href="tel:08155615166">Call Us</a></li>
+  </ul>
+  <div class="ft-copy">&copy; 2026 Smokesman Grill. All Rights Reserved.</div>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<!-- MODAL: AUTH -->
+<div class="mo" id="moAuth">
+  <div class="mo-box">
+    <button class="mo-x" onclick="closeMo('moAuth')">&#x2715;</button>
+    <div class="mo-head">
+      <div class="mo-ey">Smokesman Grill</div>
+      <h2 class="mo-title" id="authT">Welcome <em>Back</em></h2>
+      <p class="mo-sub" id="authS">Sign in to your account to order and manage your profile.</p>
+    </div>
+    <div class="mo-body">
+      <div class="m-tabs">
+        <button class="m-tab on" id="tLogin" onclick="swAuth('login')">Log In</button>
+        <button class="m-tab" id="tSignup" onclick="swAuth('signup')">Sign Up</button>
+      </div>
+      <div id="fLogin">
+        <div class="fg"><label class="fl">Email Address</label><input type="email" class="fi" id="lEm" placeholder="you@example.com"></div>
+        <div class="fg"><label class="fl">Password</label><input type="password" class="fi" id="lPw" placeholder="Your password"><div class="fe" id="lErr">Invalid email or password. Please try again.</div></div>
+        <button class="fs" id="loginBtn" onclick="doLogin()">Sign In to My Account</button>
+        <div class="ff-note">No account? <button onclick="swAuth('signup')">Create one free</button></div>
+      </div>
+      <div id="fSignup" style="display:none">
+        <div class="fg"><label class="fl">Full Name</label><input type="text" class="fi" id="sNm" placeholder="Your full name"><div class="fe" id="sNmE">Please enter your name.</div></div>
+        <div class="fg"><label class="fl">Email Address</label><input type="email" class="fi" id="sEm" placeholder="you@example.com"><div class="fe" id="sEmE">Email already registered.</div></div>
+        <div class="fg"><label class="fl">Password</label><input type="password" class="fi" id="sPw" placeholder="Min. 6 characters"><div class="fe" id="sPwE">Password must be at least 6 characters.</div></div>
+        <button class="fs" id="signupBtn" onclick="doSignup()">Create My Account</button>
+        <div class="ff-note">Already a member? <button onclick="swAuth('login')">Sign in</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: ACCOUNT -->
+<div class="mo" id="moAccount">
+  <div class="mo-box wide">
+    <button class="mo-x" onclick="closeMo('moAccount')">&#x2715;</button>
+    <div class="mo-head"><div class="mo-ey">My Account</div><h2 class="mo-title">Your <em>Profile</em></h2></div>
+    <div class="mo-body">
+      <div class="ac-profile">
+        <div class="ac-av" id="acAv">S</div>
+        <div><div class="ac-name" id="acNm">Name</div><div class="ac-email" id="acEm">email</div><div class="ac-since" id="acSince">Member since today</div></div>
+      </div>
+      <div class="ac-btns"><button class="btn-lo" onclick="doLogout()">Log Out</button></div>
+      <div class="ac-sec"><div class="ac-sec-t">Stats</div>
+        <div class="ac-stats">
+          <div class="ac-stat"><div class="ac-stat-n" id="acOC">0</div><div class="ac-stat-l">Orders</div></div>
+          <div class="ac-stat"><div class="ac-stat-n" id="acSp">&#8358;0</div><div class="ac-stat-l">Total Spent</div></div>
+          <div class="ac-stat"><div class="ac-stat-n">24h</div><div class="ac-stat-l">Available</div></div>
+        </div>
+      </div>
+      <div class="ac-sec"><div class="ac-sec-t">Recent Orders</div><div class="ord-list" id="acOL"><div class="ord-empty">No orders yet.</div></div></div>
+      <div class="ac-sec"><div class="ac-sec-t">Danger Zone</div>
+        <div class="dz"><div class="dz-t">Delete Account</div><p class="dz-p">Permanently delete your account, order history, and all personal data. This cannot be undone.</p><button class="btn-del" onclick="openDelConf()">Delete My Account</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: ORDER -->
+<div class="mo" id="moOrder">
+  <div class="mo-box wide">
+    <button class="mo-x" onclick="closeMo('moOrder')">&#x2715;</button>
+    <div class="mo-head"><div class="mo-ey">Your Order</div><h2 class="mo-title">The <em>Cart</em></h2><p class="mo-sub">Add items then proceed to payment.</p></div>
+    <div class="mo-body">
+      <div class="ac-sec-t" style="margin-bottom:1rem">Add Items</div>
+      <div class="mq-menu" id="mqMenu"></div>
+      <div class="ac-sec-t" style="margin-bottom:1rem;margin-top:1.5rem">Your Cart</div>
+      <div class="cart-rows" id="cartRows"></div>
+      <div id="cartEmptyMsg" class="cart-empty">Your cart is empty. Add something above.</div>
+      <div class="cart-total" id="cartTot" style="display:none"><span class="ct-l">Total</span><span class="ct-v" id="cartTotV">&#8358;0</span></div>
+      <button class="fs" id="chkBtn" style="display:none" onclick="goToPayment()">Proceed to Payment</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: PAYMENT -->
+<div class="mo" id="moPayment">
+  <div class="mo-box wide">
+    <button class="mo-x" onclick="closeMo('moPayment')">&#x2715;</button>
+    <div class="mo-head"><div class="mo-ey">Secure Payment</div><h2 class="mo-title">Choose <em>Payment</em></h2><p class="mo-sub">Select your preferred payment method.</p></div>
+    <div class="mo-body">
+      <div class="p-summary" id="pSum"></div>
+      <div class="p-tabs">
+        <button class="p-tab on" onclick="swPay('pBanks',this)">&#127974; Nigerian Banks</button>
+        <button class="p-tab" onclick="swPay('pPaypal',this)">&#128153; PayPal</button>
+      </div>
+      <div class="p-sec on" id="pBanks">
+        <div class="banks">
+          <div class="bk" onclick="pickBank('GTBank','#E05500','GT')" data-b="GTBank"><div class="bk-logo" style="background:#E05500">GT</div><div class="bk-name">GTBank</div></div>
+          <div class="bk" onclick="pickBank('First Bank','#003087','FB')" data-b="First Bank"><div class="bk-logo" style="background:#003087">FB</div><div class="bk-name">First Bank</div></div>
+          <div class="bk" onclick="pickBank('Access Bank','#C62828','AB')" data-b="Access Bank"><div class="bk-logo" style="background:#C62828">AB</div><div class="bk-name">Access Bank</div></div>
+          <div class="bk" onclick="pickBank('Zenith Bank','#CC0000','ZB')" data-b="Zenith Bank"><div class="bk-logo" style="background:#CC0000">ZB</div><div class="bk-name">Zenith Bank</div></div>
+          <div class="bk" onclick="pickBank('UBA','#D32F2F','UBA')" data-b="UBA"><div class="bk-logo" style="background:#D32F2F">UBA</div><div class="bk-name">UBA</div></div>
+          <div class="bk" onclick="pickBank('Fidelity Bank','#2E7D32','FBK')" data-b="Fidelity"><div class="bk-logo" style="background:#2E7D32">FBK</div><div class="bk-name">Fidelity</div></div>
+          <div class="bk" onclick="pickBank('FCMB','#1565C0','FC')" data-b="FCMB"><div class="bk-logo" style="background:#1565C0">FC</div><div class="bk-name">FCMB</div></div>
+          <div class="bk" onclick="pickBank('Sterling Bank','#C75000','SB')" data-b="Sterling"><div class="bk-logo" style="background:#C75000">SB</div><div class="bk-name">Sterling</div></div>
+          <div class="bk" onclick="pickBank('Polaris Bank','#6B2D8B','PB')" data-b="Polaris"><div class="bk-logo" style="background:#6B2D8B">PB</div><div class="bk-name">Polaris</div></div>
+          <div class="bk" onclick="pickBank('Kuda Bank','#40196D','KD')" data-b="Kuda"><div class="bk-logo" style="background:#40196D">KD</div><div class="bk-name">Kuda</div></div>
+          <div class="bk" onclick="pickBank('OPay','#1A9E5E','OP')" data-b="OPay"><div class="bk-logo" style="background:#1A9E5E">OP</div><div class="bk-name">OPay</div></div>
+          <div class="bk" onclick="pickBank('Moniepoint','#2563EB','MP')" data-b="Moniepoint"><div class="bk-logo" style="background:#2563EB">MP</div><div class="bk-name">Moniepoint</div></div>
+        </div>
+        <div class="bk-detail" id="bkDet">
+          <div class="bdr"><span class="bdr-l">Bank</span><span class="bdr-v" id="bkNm">&#x2014;</span></div>
+          <div class="bdr"><span class="bdr-l">Account Name</span><span class="bdr-v">Smokesman Grill Ltd</span></div>
+          <div class="bdr"><span class="bdr-l">Account Number</span><span class="bdr-v" id="bkAcc">&#x2014;</span><button class="bdr-cp" onclick="copyAcc()">Copy</button></div>
+          <div class="bdr"><span class="bdr-l">Amount</span><span class="bdr-v" id="bkAmt">&#x2014;</span></div>
+        </div>
+        <button class="p-confirm" id="bkPay" style="display:none" onclick="confirmPay('bank')">I Have Transferred the Amount</button>
+      </div>
+      <div class="p-sec" id="pPaypal">
+        <div class="pp-box">
+          <div class="pp-brand"><span class="pp-blue">Pay</span><span class="pp-dark">Pal</span></div>
+          <p class="pp-sub">Pay securely with your PayPal account or any debit/credit card via PayPal.</p>
+          <div class="pp-amt" id="ppAmt">&#8358;0</div>
+          <button class="pp-go" onclick="confirmPay('paypal')">Pay with PayPal</button>
+          <p class="pp-fine">All major cards accepted via PayPal.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: CONFIRM -->
+<div class="mo" id="moConfirm">
+  <div class="mo-box">
+    <button class="mo-x" onclick="closeMo('moConfirm')">&#x2715;</button>
+    <div class="mo-head"><div class="mo-ey">Order Confirmed</div><h2 class="mo-title">Thank <em>You</em></h2></div>
+    <div class="mo-body">
+      <div class="cf-ico">&#128293;</div>
+      <p class="cf-msg" id="cfMsg">Your order is confirmed. We are firing up the grill.</p>
+      <div class="cf-ref">Reference: <span id="cfRef">SMK-00000</span></div>
+      <button class="fs" onclick="closeMo('moConfirm')">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: DELETE -->
+<div class="mo" id="moDel">
+  <div class="mo-box">
+    <button class="mo-x" onclick="closeMo('moDel')">&#x2715;</button>
+    <div class="mo-head"><div class="mo-ey">Danger Zone</div><h2 class="mo-title" style="color:#d95858">Delete <em>Account</em></h2></div>
+    <div class="mo-body">
+      <div class="del-warn">&#9888;&#65039; This is <strong>permanent and cannot be undone.</strong> Your account, all orders, and personal data will be permanently deleted from our database.</div>
+      <div class="del-btns"><button class="btn-cancel" onclick="closeMo('moDel')">Cancel</button><button class="btn-del" id="delBtn" onclick="doDelete()">Yes, Delete Forever</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: FIREBASE SETUP GUIDE -->
+<div class="mo" id="moSetup">
+  <div class="mo-box wide">
+    <button class="mo-x" onclick="closeMo('moSetup')">&#x2715;</button>
+    <div class="mo-head">
+      <div class="mo-ey">One-Time Setup</div>
+      <h2 class="mo-title">Firebase <em>Setup</em></h2>
+      <p class="mo-sub">Follow these 6 steps once. Takes about 10 minutes. Customer data will then be saved permanently in Google's cloud &mdash; forever safe.</p>
+    </div>
+    <div class="mo-body">
+      <div class="fbg-steps">
+        <div class="fbg-step"><span class="fbg-num">1</span><div class="fbg-info"><div class="fbg-title">Create a Firebase Project</div><div class="fbg-desc">Go to <a href="https://console.firebase.google.com" target="_blank" class="fbg-link">console.firebase.google.com</a> &rarr; Click "Add Project" &rarr; Name it "smokesman-grill" &rarr; Click through and create.</div></div></div>
+        <div class="fbg-step"><span class="fbg-num">2</span><div class="fbg-info"><div class="fbg-title">Add a Web App</div><div class="fbg-desc">Inside your project, click the Web icon (&lt;/&gt;) &rarr; Register app with nickname "Smokesman Web" &rarr; Copy the firebaseConfig object that appears.</div></div></div>
+        <div class="fbg-step"><span class="fbg-num">3</span><div class="fbg-info"><div class="fbg-title">Enable Email/Password Authentication</div><div class="fbg-desc">In the Firebase Console &rarr; Build &rarr; Authentication &rarr; Get Started &rarr; Sign-in method &rarr; Enable "Email/Password" &rarr; Save.</div></div></div>
+        <div class="fbg-step"><span class="fbg-num">4</span><div class="fbg-info"><div class="fbg-title">Create Firestore Database</div><div class="fbg-desc">Build &rarr; Firestore Database &rarr; Create database &rarr; Start in "test mode" (for now) &rarr; Choose a location closest to Nigeria (europe-west1 is fine) &rarr; Enable.</div></div></div>
+        <div class="fbg-step"><span class="fbg-num">5</span><div class="fbg-info"><div class="fbg-title">Paste Your Config Into the Website File</div><div class="fbg-desc">Open the website HTML file in any text editor (Notepad, VS Code) &rarr; Find the section that says PASTE YOUR FIREBASE CONFIG HERE &rarr; Replace the placeholder values with your real config from step 2.</div>
+          <div class="fbg-code">// FIND THIS SECTION IN THE HTML FILE AND REPLACE:
+const firebaseConfig = {
+  apiKey: "PASTE-YOUR-API-KEY-HERE",
+  authDomain: "your-project.firebaseapp.com",
+  projectId: "your-project-id",
+  storageBucket: "your-project.appspot.com",
+  messagingSenderId: "your-sender-id",
+  appId: "your-app-id"
+};</div>
+        </div></div>
+        <div class="fbg-step"><span class="fbg-num">6</span><div class="fbg-info"><div class="fbg-title">Save the File and Go Live</div><div class="fbg-desc">Save the HTML file. The setup banner at the top will disappear. Customer accounts and order history will now be saved permanently in Firebase &mdash; surviving every update, redesign, and device change.</div></div></div>
+      </div>
+      <div class="fbg-note">&#128293; <strong>Once configured:</strong> You can update payment details, menu items, or redesign sections of the website at any time without ever touching the database. Customer data lives separately in Firebase and is always safe.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =============================================
+   FIREBASE CONFIG
+   Replace the values below with your real
+   Firebase project config from the console
+============================================= */
+const firebaseConfig = {
+  apiKey: "AIzaSyDK7wr0-vMual69DssqwPlQ4wV59dnPfTc",
+  authDomain: "PASTE-YOUR-PROJECT-ID.firebaseapp.com",
+  projectId: "smokesman-canteen",
+  storageBucket: "smokesman-canteen.firebasestorage.app.appspot.com",
+  messagingSenderId: "705778808939",
+  appId: "1:705778808939:web:6a437fcba9243f8b6a592e"
+};
+
+/* =============================================
+   FIREBASE INIT (only runs if config is real)
+============================================= */
+const FB_READY = !firebaseConfig.apiKey.includes("PASTE");
+let auth = null, db = null;
+
+if (FB_READY) {
+  firebase.initializeApp(firebaseConfig);
+  auth = firebase.auth();
+  db = firebase.firestore();
+  document.getElementById("setupBanner").classList.remove("show");
+  document.getElementById("nav").classList.remove("bumped");
+
+  auth.onAuthStateChanged(async user => {
+    if (user) {
+      await loadUserProfile(user.uid);
+    } else {
+      currentUser = null;
+      updateNav();
+    }
+  });
+} else {
+  document.getElementById("setupBanner").classList.add("show");
+  document.getElementById("nav").classList.add("bumped");
+}
+
+/* =============================================
+   CURRENT USER STATE
+============================================= */
+let currentUser = null;
+
+/* =============================================
+   AUTH FUNCTIONS
+============================================= */
+function swAuth(tab) {
+  const lg = tab === "login";
+  document.getElementById("tLogin").classList.toggle("on", lg);
+  document.getElementById("tSignup").classList.toggle("on", !lg);
+  document.getElementById("fLogin").style.display = lg ? "" : "none";
+  document.getElementById("fSignup").style.display = lg ? "none" : "";
+  document.getElementById("authT").innerHTML = lg ? "Welcome <em>Back</em>" : "Join <em>Us</em>";
+  document.getElementById("authS").textContent = lg
+    ? "Sign in to order and manage your profile."
+    : "Create your free account to order online.";
+  ["lErr","sNmE","sEmE","sPwE"].forEach(id => {
+    const e = document.getElementById(id); if(e) e.classList.remove("show");
+  });
+}
+
+async function doLogin() {
+  if (!FB_READY) { toast("&#9889; Please complete Firebase setup first"); openMo("moSetup"); return; }
+  const email = document.getElementById("lEm").value.trim();
+  const pwd = document.getElementById("lPw").value;
+  const errEl = document.getElementById("lErr");
+  const btn = document.getElementById("loginBtn");
+  errEl.classList.remove("show");
+  btn.disabled = true;
+  btn.innerHTML = "<span class=\"spin\"></span>Signing In...";
+  try {
+    await auth.signInWithEmailAndPassword(email, pwd);
+    closeMo("moAuth");
+    toast("Welcome back! &#128293;");
+  } catch(e) {
+    errEl.classList.add("show");
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = "Sign In to My Account";
+  }
+}
+
+async function doSignup() {
+  if (!FB_READY) { toast("&#9889; Please complete Firebase setup first"); openMo("moSetup"); return; }
+  const name = document.getElementById("sNm").value.trim();
+  const email = document.getElementById("sEm").value.trim();
+  const pwd = document.getElementById("sPw").value;
+  const btn = document.getElementById("signupBtn");
+  ["sNmE","sEmE","sPwE"].forEach(id => document.getElementById(id).classList.remove("show"));
+  if (!name) { document.getElementById("sNmE").classList.add("show"); return; }
+  if (pwd.length < 6) { document.getElementById("sPwE").classList.add("show"); return; }
+  btn.disabled = true;
+  btn.innerHTML = "<span class=\"spin\"></span>Creating Account...";
+  try {
+    const cred = await auth.createUserWithEmailAndPassword(email, pwd);
+    await db.collection("users").doc(cred.user.uid).set({
+      name,
+      email: email.toLowerCase(),
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      totalSpent: 0,
+      orderCount: 0
+    });
+    closeMo("moAuth");
+    toast("Welcome to Smokesman, " + name.split(" ")[0] + "! &#128293;");
+  } catch(e) {
+    if (e.code === "auth/email-already-in-use") {
+      document.getElementById("sEmE").classList.add("show");
+    } else {
+      toast("Error: " + e.message);
+    }
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = "Create My Account";
+  }
+}
+
+async function doLogout() {
+  await auth.signOut();
+  closeMo("moAccount");
+  toast("Logged out. See you soon! &#128075;");
+}
+
+/* =============================================
+   LOAD USER PROFILE FROM FIRESTORE
+============================================= */
+async function loadUserProfile(uid) {
+  try {
+    const doc = await db.collection("users").doc(uid).get();
+    if (doc.exists) {
+      currentUser = { uid, ...doc.data() };
+    } else {
+      currentUser = { uid, name: auth.currentUser.email, email: auth.currentUser.email, totalSpent: 0, orderCount: 0 };
+    }
+    updateNav();
+  } catch(e) {
+    currentUser = { uid, name: "User", email: "", totalSpent: 0, orderCount: 0 };
+    updateNav();
+  }
+}
+
+/* =============================================
+   ACCOUNT DASHBOARD
+============================================= */
+async function fillAccount() {
+  if (!currentUser) return;
+  document.getElementById("acAv").textContent = (currentUser.name || "U").charAt(0).toUpperCase();
+  document.getElementById("acNm").textContent = currentUser.name || "User";
+  document.getElementById("acEm").textContent = currentUser.email || "";
+  const created = currentUser.createdAt;
+  let createdStr = "Today";
+  if (created && created.toDate) {
+    createdStr = created.toDate().toLocaleDateString("en-GB", {day:"numeric",month:"long",year:"numeric"});
+  }
+  document.getElementById("acSince").textContent = "Member since " + createdStr;
+  document.getElementById("acOC").textContent = currentUser.orderCount || 0;
+  document.getElementById("acSp").textContent = "&#8358;" + (currentUser.totalSpent || 0).toLocaleString();
+  const ol = document.getElementById("acOL");
+  ol.innerHTML = "<div class=\"ord-empty\"><span class=\"spin\"></span> Loading orders...</div>";
+  try {
+    const snap = await db.collection("users").doc(currentUser.uid).collection("orders")
+      .orderBy("createdAt", "desc").limit(5).get();
+    if (snap.empty) {
+      ol.innerHTML = "<div class=\"ord-empty\">No orders yet. Start by adding items to your cart.</div>";
+    } else {
+      ol.innerHTML = snap.docs.map(d => {
+        const o = d.data();
+        return `<div class="ord-item">
+          <div><div class="oi-n">${(o.items||[]).slice(0,2).join(", ")}${(o.items||[]).length>2?"...":""}</div>
+          <div class="oi-d">${o.date||""} &middot; ${o.method||""} &middot; ${o.ref||""}</div></div>
+          <div class="oi-p">&#8358;${(o.total||0).toLocaleString()}</div></div>`;
+      }).join("");
+    }
+  } catch(e) {
+    ol.innerHTML = "<div class=\"ord-empty\">Could not load orders.</div>";
+  }
+}
+
+function openDelConf() { closeMo("moAccount"); openMo("moDel"); }
+
+async function doDelete() {
+  if (!auth || !auth.currentUser) return;
+  const btn = document.getElementById("delBtn");
+  btn.disabled = true;
+  btn.innerHTML = "<span class=\"spin\"></span>Deleting...";
+  try {
+    const uid = auth.currentUser.uid;
+    await db.collection("users").doc(uid).delete();
+    await auth.currentUser.delete();
+    closeMo("moDel");
+    updateNav();
+    toast("Account permanently deleted. Goodbye. &#128075;");
+  } catch(e) {
+    if (e.code === "auth/requires-recent-login") {
+      toast("For security, please log out and log back in before deleting.");
+      closeMo("moDel");
+    } else {
+      toast("Error deleting account: " + e.message);
+    }
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = "Yes, Delete Forever";
+  }
+}
+
+/* =============================================
+   SAVE ORDER TO FIRESTORE
+============================================= */
+async function saveOrderToFirestore(items, total, method) {
+  if (!currentUser || !db) return "SMK-" + Math.floor(Math.random()*90000+10000);
+  const ref = "SMK-" + Math.floor(Math.random()*90000+10000);
+  try {
+    await db.collection("users").doc(currentUser.uid).collection("orders").add({
+      ref,
+      items: items.map(i => i.name),
+      total,
+      method,
+      date: new Date().toLocaleDateString("en-GB"),
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    await db.collection("users").doc(currentUser.uid).update({
+      totalSpent: firebase.firestore.FieldValue.increment(total),
+      orderCount: firebase.firestore.FieldValue.increment(1)
+    });
+    currentUser.totalSpent = (currentUser.totalSpent || 0) + total;
+    currentUser.orderCount = (currentUser.orderCount || 0) + 1;
+  } catch(e) { console.error("Order save error:", e); }
+  return ref;
+}
+
+/* =============================================
+   NAV UPDATE
+============================================= */
+function updateNav() {
+  const u = currentUser;
+  document.getElementById("navAuth").style.display = u ? "none" : "flex";
+  document.getElementById("navUser").style.display = u ? "flex" : "none";
+  if (u) {
+    document.getElementById("nAv").textContent = (u.name || "U").charAt(0).toUpperCase();
+    document.getElementById("nUn").textContent = (u.name || "User").split(" ")[0];
+  }
+}
+
+/* =============================================
+   CART
+============================================= */
+const CART = {
+  items: [],
+  add(name, price) { this.items.push({id: Date.now()+Math.random(), name, price}); renderCart(); },
+  rm(id) { this.items = this.items.filter(i => i.id !== id); renderCart(); },
+  total() { return this.items.reduce((s,i) => s+i.price, 0); },
+  clear() { this.items = []; renderCart(); }
+};
+
+const MENU = [
+  {name:"Smokesman Special Suya",price:3500,cat:"Grill"},
+  {name:"Whole Smoked Chicken",price:6500,cat:"Grill"},
+  {name:"Grilled Catfish",price:5500,cat:"Grill"},
+  {name:"Smoked Goat Ribs",price:7000,cat:"Grill"},
+  {name:"Smoked Turkey Leg",price:4500,cat:"Grill"},
+  {name:"Prime Rib-Eye Beef",price:8500,cat:"Grill"},
+  {name:"Peppered Fried Plantain",price:800,cat:"Sides"},
+  {name:"Smokesman Peppersoup",price:2000,cat:"Sides"},
+  {name:"Pasta & Smoky Tomato",price:2500,cat:"Sides"},
+  {name:"Zobo Delight",price:500,cat:"Drinks"},
+  {name:"Cold Selection",price:300,cat:"Drinks"}
+];
+
+function renderCart() {
+  const rows = document.getElementById("cartRows");
+  const empty = document.getElementById("cartEmptyMsg");
+  const tot = document.getElementById("cartTot");
+  const btn = document.getElementById("chkBtn");
+  if (!rows) return;
+  if (!CART.items.length) {
+    rows.innerHTML = ""; empty.style.display = ""; tot.style.display = "none"; btn.style.display = "none"; return;
+  }
+  empty.style.display = "none"; tot.style.display = "flex"; btn.style.display = "";
+  rows.innerHTML = CART.items.map(i =>
+    `<div class="cr"><span class="cr-n">${i.name}</span>
+    <div class="cr-r"><span class="cr-p">&#8358;${i.price.toLocaleString()}</span>
+    <button class="cr-x" onclick="CART.rm(${i.id})">&#x2715;</button></div></div>`
+  ).join("");
+  document.getElementById("cartTotV").textContent = "&#8358;" + CART.total().toLocaleString();
+}
+
+function addToCart(btn) {
+  const cc = btn.closest(".cc");
+  CART.add(cc.dataset.name, parseInt(cc.dataset.price));
+  btn.textContent = "&#10003; Added"; btn.style.background = "var(--brass)";
+  setTimeout(() => { btn.textContent = "+ Add"; btn.style.background = ""; }, 1800);
+}
+
+function handleOrderNow() {
+  if (!currentUser) { openMo("moAuth","signup"); return; }
+  fillMqMenu(); renderCart(); openMo("moOrder");
+}
+
+function fillMqMenu() {
+  document.getElementById("mqMenu").innerHTML = MENU.map(m =>
+    `<div class="mq-row">
+      <div><div class="mq-rn">${m.name}</div><div class="mq-rp">&#8358;${m.price.toLocaleString()} &middot; ${m.cat}</div></div>
+      <button class="mq-ra" onclick="CART.add(\`${m.name}\`,${m.price})">+ Add</button>
+    </div>`
+  ).join("");
+}
+
+function goToPayment() { if (!CART.items.length) return; closeMo("moOrder"); openMo("moPayment"); }
+
+/* =============================================
+   PAYMENT
+============================================= */
+function fillPayment() {
+  const total = CART.total(), items = CART.items;
+  document.getElementById("pSum").innerHTML =
+    items.slice(0,4).map(i => `<div class="psr"><span class="psr-l">${i.name}</span><span class="psr-v">&#8358;${i.price.toLocaleString()}</span></div>`).join("") +
+    (items.length > 4 ? `<div class="psr"><span class="psr-l">+${items.length-4} more items</span></div>` : "") +
+    `<div class="pst"><span class="pst-l">Total</span><span class="pst-v">&#8358;${total.toLocaleString()}</span></div>`;
+  document.getElementById("ppAmt").textContent = "&#8358;" + total.toLocaleString();
+  document.querySelectorAll(".bk").forEach(b => b.classList.remove("sel"));
+  document.getElementById("bkDet").classList.remove("show");
+  document.getElementById("bkPay").style.display = "none";
+}
+
+function swPay(sec, btn) {
+  document.querySelectorAll(".p-tab").forEach(t => t.classList.remove("on"));
+  document.querySelectorAll(".p-sec").forEach(s => s.classList.remove("on"));
+  btn.classList.add("on"); document.getElementById(sec).classList.add("on");
+}
+
+function pickBank(name) {
+  document.querySelectorAll(".bk").forEach(b => b.classList.remove("sel"));
+  document.querySelector(`[data-b="${name}"]`).classList.add("sel");
+  document.getElementById("bkDet").classList.add("show");
+  document.getElementById("bkNm").textContent = name;
+  document.getElementById("bkAcc").textContent = "— Add your real account number here —";
+  document.getElementById("bkAmt").textContent = "&#8358;" + CART.total().toLocaleString();
+  document.getElementById("bkPay").style.display = "";
+}
+
+function copyAcc() {
+  const v = document.getElementById("bkAcc").textContent;
+  navigator.clipboard.writeText(v).then(() => toast("Account number copied!")).catch(() => toast("Acc: " + v));
+}
+
+async function confirmPay(method) {
+  const total = CART.total();
+  const bank = method === "bank" ? document.getElementById("bkNm").textContent : "PayPal";
+  const ref = await saveOrderToFirestore(CART.items, total, bank);
+  CART.clear();
+  closeMo("moPayment");
+  document.getElementById("cfMsg").innerHTML = method === "paypal"
+    ? `Your PayPal payment of &#8358;${total.toLocaleString()} was initiated. We are firing up the grill! Call 0815 561 5166 for updates.`
+    : `Your bank transfer of &#8358;${total.toLocaleString()} is received. Once payment clears, we will get started immediately.`;
+  document.getElementById("cfRef").textContent = ref;
+  openMo("moConfirm");
+}
+
+/* =============================================
+   MODAL SYSTEM
+============================================= */
+function openMo(id, tab) {
+  document.querySelectorAll(".mo").forEach(m => m.classList.remove("open"));
+  const m = document.getElementById(id);
+  if (!m) return;
+  m.classList.add("open");
+  document.body.classList.add("locked");
+  if (id === "moAuth" && tab) swAuth(tab);
+  if (id === "moAccount") fillAccount();
+  if (id === "moPayment") fillPayment();
+}
+function closeMo(id) {
+  const m = document.getElementById(id);
+  if (m) m.classList.remove("open");
+  document.body.classList.remove("locked");
+}
+document.querySelectorAll(".mo").forEach(m => {
+  m.addEventListener("click", e => { if (e.target === m) { m.classList.remove("open"); document.body.classList.remove("locked"); }});
+});
+
+/* =============================================
+   TOAST
+============================================= */
+function toast(msg) {
+  const t = document.getElementById("toast");
+  t.innerHTML = msg; t.classList.add("show");
+  clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove("show"), 3500);
+}
+
+/* =============================================
+   MENU FILTER
+============================================= */
+function fCut(cat, btn) {
+  document.querySelectorAll(".c-tab").forEach(t => t.classList.remove("on")); btn.classList.add("on");
+  document.querySelectorAll(".cc").forEach(c => { c.style.display = (cat==="all"||c.dataset.cat===cat) ? "" : "none"; });
+}
+
+/* =============================================
+   SMOOTH SCROLL
+============================================= */
+function smoothTo(id) {
+  const el = document.getElementById(id);
+  if (el) el.scrollIntoView({behavior:"smooth", block:"start"});
+}
+
+/* =============================================
+   SCROLL EVENTS
+============================================= */
+window.addEventListener("scroll", () => {
+  const max = document.documentElement.scrollHeight - window.innerHeight;
+  document.getElementById("prog").style.width = (scrollY / max * 100) + "%";
+  document.getElementById("nav").classList.toggle("sc", scrollY > 80);
+}, {passive:true});
+
+/* =============================================
+   PRELOADER
+============================================= */
+setTimeout(() => document.getElementById("pre").classList.add("go"), 60);
+setTimeout(() => {
+  document.getElementById("pre").classList.add("out");
+  document.getElementById("hT").querySelectorAll(".split-line").forEach(s => s.classList.add("vi"));
+  document.querySelectorAll(".rv,.split-line,.ms").forEach(el => obs.observe(el));
+}, 2800);
+
+/* =============================================
+   INTERSECTION OBSERVER
+============================================= */
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add("vi"); });
+}, {threshold:.07, rootMargin:"0px 0px -25px 0px"});
+
+/* =============================================
+   CURSOR
+============================================= */
+(function(){
+  const d = document.getElementById("cDot"), r = document.getElementById("cRing");
+  let mx=0,my=0,rx=0,ry=0;
+  document.addEventListener("mousemove", e => { mx=e.clientX; my=e.clientY; d.style.left=mx+"px"; d.style.top=my+"px"; });
+  (function lp(){ rx+=(mx-rx)*.11; ry+=(my-ry)*.11; r.style.left=rx+"px"; r.style.top=ry+"px"; requestAnimationFrame(lp); })();
+  document.querySelectorAll("a,button,.cc,.rvc,.bk,.mq-row").forEach(el => {
+    el.addEventListener("mouseenter", () => document.body.classList.add("ch"));
+    el.addEventListener("mouseleave", () => document.body.classList.remove("ch"));
+  });
+})();
+
+/* =============================================
+   THREE.JS EMBERS
+============================================= */
+(function(){
+  if (typeof THREE === "undefined") return;
+  const cvs = document.getElementById("hCvs"), hero = document.getElementById("hero");
+  const W = hero.clientWidth, H = hero.clientHeight;
+  const ren = new THREE.WebGLRenderer({canvas:cvs, antialias:true, alpha:true});
+  ren.setSize(W,H); ren.setPixelRatio(Math.min(devicePixelRatio,2)); ren.setClearColor(0,0);
+  const scene = new THREE.Scene(), cam = new THREE.PerspectiveCamera(60,W/H,.1,200);
+  cam.position.z = 9;
+  const N=300, geo=new THREE.BufferGeometry(), pos=new Float32Array(N*3), col=new Float32Array(N*3), vel=[];
+  for(let i=0;i<N;i++){
+    pos[i*3]=(Math.random()-.5)*24; pos[i*3+1]=Math.random()*-20; pos[i*3+2]=(Math.random()-.5)*6;
+    const t=Math.random(); col[i*3]=.65+t*.35; col[i*3+1]=.14+t*.46; col[i*3+2]=0;
+    vel.push({vx:(Math.random()-.5)*.012, vy:.013+Math.random()*.03, w:Math.random()*Math.PI*2, ws:.011+Math.random()*.022, wa:.002+Math.random()*.005});
+  }
+  geo.setAttribute("position",new THREE.BufferAttribute(pos,3));
+  geo.setAttribute("color",new THREE.BufferAttribute(col,3));
+  const mat=new THREE.PointsMaterial({size:.13,vertexColors:true,transparent:true,opacity:.9,blending:THREE.AdditiveBlending,depthWrite:false,sizeAttenuation:true});
+  const pts=new THREE.Points(geo,mat); scene.add(pts);
+  const G=55, g2=new THREE.BufferGeometry(), p2=new Float32Array(G*3), c2=new Float32Array(G*3), v2=[];
+  for(let i=0;i<G;i++){
+    p2[i*3]=(Math.random()-.5)*20; p2[i*3+1]=Math.random()*-20; p2[i*3+2]=(Math.random()-.5)*5;
+    const t=Math.random(); c2[i*3]=.7+t*.3; c2[i*3+1]=.28+t*.35; c2[i*3+2]=0;
+    v2.push({vx:(Math.random()-.5)*.008, vy:.009+Math.random()*.018, w:Math.random()*Math.PI*2, ws:.009+Math.random()*.016, wa:.003+Math.random()*.005});
+  }
+  g2.setAttribute("position",new THREE.BufferAttribute(p2,3));
+  g2.setAttribute("color",new THREE.BufferAttribute(c2,3));
+  const m2=new THREE.PointsMaterial({size:.46,vertexColors:true,transparent:true,opacity:.19,blending:THREE.AdditiveBlending,depthWrite:false,sizeAttenuation:true});
+  scene.add(new THREE.Points(g2,m2));
+  const clk=new THREE.Clock();
+  (function tick(){
+    requestAnimationFrame(tick); const t=clk.getElapsedTime();
+    const pa=pts.geometry.attributes.position.array;
+    for(let i=0;i<N;i++){ const v=vel[i]; v.w+=v.ws; pa[i*3]+=v.vx+Math.sin(v.w)*v.wa; pa[i*3+1]+=v.vy; if(pa[i*3+1]>12){pa[i*3]=(Math.random()-.5)*24;pa[i*3+1]=-16;pa[i*3+2]=(Math.random()-.5)*6;}}
+    pts.geometry.attributes.position.needsUpdate=true;
+    const ga=g2.attributes.position.array;
+    for(let i=0;i<G;i++){ const v=v2[i]; v.w+=v.ws; ga[i*3]+=v.vx+Math.sin(v.w)*v.wa; ga[i*3+1]+=v.vy; if(ga[i*3+1]>12){ga[i*3]=(Math.random()-.5)*20;ga[i*3+1]=-16;ga[i*3+2]=(Math.random()-.5)*5;}}
+    g2.attributes.position.needsUpdate=true;
+    cam.position.x=Math.sin(t*.07)*.3; cam.position.y=Math.sin(t*.055)*.18;
+    ren.render(scene,cam);
+  })();
+  window.addEventListener("scroll", () => { cvs.style.transform=`translateY(${scrollY*.28}px)`; }, {passive:true});
+  window.addEventListener("resize", () => { const nW=hero.clientWidth,nH=hero.clientHeight; cam.aspect=nW/nH; cam.updateProjectionMatrix(); ren.setSize(nW,nH); }, {passive:true});
+})();
+
+/* =============================================
+   MAGNETIC BUTTONS
+============================================= */
+document.querySelectorAll(".mag").forEach(b => {
+  b.addEventListener("mousemove", e => { const r=b.getBoundingClientRect(); b.style.transform=`translate(${(e.clientX-r.left-r.width/2)*.28}px,${(e.clientY-r.top-r.height/2)*.28}px)`; b.style.transition="transform .08s"; });
+  b.addEventListener("mouseleave", () => { b.style.transform=""; b.style.transition="transform .55s var(--ease)"; });
+});
+
+/* =============================================
+   FLOATING FOOD
+============================================= */
+(function(){
+  const foods=["&#127831;","&#127830;","&#129385;","&#127837;","&#127831;","&#128004;","&#129385;","&#127830;","&#127831;","&#127837;","&#127798;","&#128293;","&#127831;","&#127830;","&#129385;","&#127837;","&#128016;","&#129373;"];
+  const c=document.getElementById("foodBg");
+  foods.forEach((em,i)=>{
+    const el=document.createElement("span"); el.className="ff"; el.innerHTML=em;
+    const lft=3+(i*6.1)%94, dur=13+(i*3.7)%22, delay=-(i*2.8)%dur, sz=1.3+(i*.31)%2.2;
+    el.style.cssText=`left:${lft}%;font-size:${sz}rem;animation-duration:${dur}s;animation-delay:${delay}s;`;
+    c.appendChild(el);
+  });
+})();
+</script>
+</body>
+</html>
